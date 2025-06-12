@@ -8,12 +8,14 @@ import sys
 logger = logging.getLogger('sc')
 
 # Set the logging level - you may want to change this to logging.INFO for less verbose logging.
-logger.setLevel(logging.DEBUG)
+# logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.NOTSET)
 
 # Create a logging handler with a format
 handler = logging.FileHandler('sc.log')
 formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(filename)s:%(lineno)s - %(funcName)s() - %(message)s')
 handler.setFormatter(formatter)
+
 
 # ... and set the handler
 logger.addHandler(handler)

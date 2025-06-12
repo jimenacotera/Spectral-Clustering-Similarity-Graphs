@@ -23,6 +23,7 @@ import pysc.objfunc
 from pysc.sclogging import logger
 
 
+
 def basic_experiment_sub_process(dataset, k, num_eigenvalues: int, q):
     logger.info(f"Starting clustering: {dataset} with {num_eigenvalues} eigenvalues.")
     start_time = time.time()
@@ -329,7 +330,7 @@ def get_bsd_num_cluster(gt_filename) -> int:
     return max(2, int(numpy.median(nums_segments)))
 
 
-def run_bsds_experiment(image_id=None):
+def run_bsds_experiment(image_id=None, graph_type="rbf"):
     """
     Run experiments on the BSDS dataset.
     :image_files: a list of the BSDS image files to experiment with
@@ -344,7 +345,7 @@ def run_bsds_experiment(image_id=None):
         # avoid segmenting on metadata and hidden files
         image_files = [f for f in os.listdir(images_directory) if not f.startswith('.')]
         # #debug
-        print(image_files)
+        # print(image_files)
     else:
         # If an image filename is provided, then work out whether it is in the test or training data
         image_filename = image_id + '.jpg'
@@ -363,18 +364,19 @@ def run_bsds_experiment(image_id=None):
                 # If the target file is not in the training directory, then it's a lost cause.
                 raise Exception("BSDS image ID not found.")
             
-    # debug 
-    print(image_files)
         
     for i, file in enumerate(image_files):
+        
         id = file.split(".")[0]
 
         # Ignore any images we've already tried.
         if os.path.exists(output_directory + id + ".mat"):
+            print("skipping")
             logger.debug(f"Skipping image {file} - output already exists.")
             continue
 
         logger.info(f"Running BSDS experiment with image {file}. (Image {i+1}/{len(image_files)})")
+        print(f"Running BSDS experiment with image {file}. (Image {i+1}/{len(image_files)})")
 
         # Get the number of clusters to look for in this image.
         k = get_bsd_num_cluster(os.path.join(ground_truth_directory, f"{id}.mat"))
@@ -384,7 +386,8 @@ def run_bsds_experiment(image_id=None):
         if len(num_eigenvectors_l) == 0 or num_eigenvectors_l[-1] != k:
             num_eigenvectors_l.append(k)
 
-        dataset = pysc.datasets.BSDSDataset(id, blur_variance=0, data_directory=images_directory)
+
+        dataset = pysc.datasets.BSDSDataset(id, blur_variance=0, data_directory=images_directory, graph_type=graph_type)
         segmentations = segment_bsds_image(dataset, k, num_eigenvectors_l)
 
         # Save the downscaled image
@@ -406,7 +409,10 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Run the experiments.')
     parser.add_argument('experiment', type=str, choices=['cycle', 'grid', 'mnist', 'usps', 'bsds'],
                         help="which experiment to perform")
+    parser.add_argument('graph_type', type=str, help = "Type of similarity graph")
     parser.add_argument('bsds_image', type=str, nargs='?', help="(optional) the BSDS ID of a single BSDS image file to segment")
+    # parser.add_argument('bsds_image', type=str, help="(optional) the BSDS ID of a single BSDS image file to segment")
+   
     return parser.parse_args()
 
 
@@ -428,7 +434,7 @@ def main():
             time.sleep(10)
             run_bsds_experiment()
         else:
-            run_bsds_experiment(image_id=args.bsds_image)
+            run_bsds_experiment(image_id=args.bsds_image, graph_type=args.graph_type)
 
 
 if __name__ == "__main__":

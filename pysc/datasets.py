@@ -365,7 +365,7 @@ class SBMGridDataset(Dataset):
 class BSDSDataset(Dataset):
 
     def __init__(self, img_idx, *args, downsample_factor=None,
-                 data_directory="data/bsds/BSR/bench/data/images/", blur_variance=1, **kwargs):
+                 data_directory="data/bsds/BSR/bench/data/images/", blur_variance=1, graph_type="rbf", **kwargs):
         """Construct a dataset from a single image in the BSDS dataset.
 
         We will construct a graph from the image based on the gaussian radial basis function.
@@ -377,18 +377,23 @@ class BSDSDataset(Dataset):
         :param blur_variance: The variance of the gaussian blur applied to the downsampled image
         :param data_directory: The base directory containing the dataset images.
         """
+        print("Building BSDS dataset")
         self.img_idx = img_idx
         self.image_filename = os.path.join(data_directory, f"{img_idx}.jpg")
         self.original_image_dimensions = []
         self.downsampled_image_dimensions = []
         self.downsample_factor = downsample_factor
         self.blur_variance = blur_variance
-        super(BSDSDataset, self).__init__(*args, graph_type="rbf", **kwargs)
+        # self.graph_type = graph_type
+
+        # super(BSDSDataset, self).__init__(*args, graph_type="rbf", **kwargs)
+        super(BSDSDataset, self).__init__(*args, graph_type=graph_type, **kwargs)
 
     def load_graph(self, *args, **kwargs):
         super(BSDSDataset, self).load_graph(*args, **kwargs)
 
         # Add a grid to the graph, with weight 0.01.
+        # this is to ensure the graph is at least connected
         logger.info(f"Adding grid graph to image graph for {self}...")
         grid_graph_adj_mat = sp.sparse.lil_matrix((self.num_data_points, self.num_data_points))
         for x in range(self.downsampled_image_dimensions[0]):

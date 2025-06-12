@@ -7,7 +7,14 @@ The code in this repository is based on https://github.com/pmacg/spectral-cluste
 
 ------
 
-CHANGE THIS BELOW AND EDIT WHEN NEEDED
+CHANGE THIS BELOW AND EDIT
+
+
+
+
+
+
+
 
 ## Preparing your environment
 Our code is primarily written in Python 3. There is also a matlab
