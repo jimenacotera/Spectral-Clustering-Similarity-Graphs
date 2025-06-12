@@ -369,11 +369,11 @@ def run_bsds_experiment(image_id=None, graph_type="rbf"):
         
         id = file.split(".")[0]
 
-        # Ignore any images we've already tried.
-        if os.path.exists(output_directory + id + ".mat"):
-            print("skipping")
-            logger.debug(f"Skipping image {file} - output already exists.")
-            continue
+        # # Ignore any images we've already tried.
+        # if os.path.exists(output_directory + id + ".mat"):
+        #     print("skipping")
+        #     logger.debug(f"Skipping image {file} - output already exists.")
+        #     continue
 
         logger.info(f"Running BSDS experiment with image {file}. (Image {i+1}/{len(image_files)})")
         print(f"Running BSDS experiment with image {file}. (Image {i+1}/{len(image_files)})")

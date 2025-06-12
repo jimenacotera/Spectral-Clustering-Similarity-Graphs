@@ -1,11 +1,14 @@
 import yaml
 import os
 import subprocess
+import pandas as pd
 
 
 with open('experiment_configurations.yaml') as f: 
     experiments = yaml.safe_load(f)['experiments']
 
+
+results = pd.DataFrame()
 
 for experiment in experiments: 
     name = experiment['name']
@@ -15,3 +18,11 @@ for experiment in experiments:
     data = 'bsds'
 
     subprocess.run(["python3", "experiments.py", data, sim_matrix])
+
+
+    # run the evaluation 
+
+    # append evaluation to results with the name of the experiment and the configsss
+
+
+# Save results to a csv with the experiment date
