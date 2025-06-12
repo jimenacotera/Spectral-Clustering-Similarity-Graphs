@@ -1,0 +1,6 @@
+experiments: 
+  - name: Fullyconn_01
+    sim_matrix: rbf
+    hyperparam_01: 
+
+

@@ -363,7 +363,7 @@ def run_bsds_experiment(image_id=None, graph_type="rbf"):
             if image_filename not in os.listdir(images_directory):
                 # If the target file is not in the training directory, then it's a lost cause.
                 raise Exception("BSDS image ID not found.")
-            
+    
         
     for i, file in enumerate(image_files):
         
