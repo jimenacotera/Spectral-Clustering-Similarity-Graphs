@@ -1,6 +1,10 @@
 experiments: 
-  - name: Fullyconn_01
+  - name: FULL_01
     sim_matrix: rbf
+    hyperparam_01: 
+
+  - name: KNN_01
+    sim_matrix: knn10
     hyperparam_01: 
 
 

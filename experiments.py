@@ -81,61 +81,61 @@ def basic_experiment(dataset, k):
 ############################################
 # Experiments on MNIST and USPS
 ############################################
-def mnist_experiment_instance(d, nn, q):
-    this_rand_scores, this_mut_info, this_conductances, this_times = basic_experiment(
-        pysc.datasets.MnistDataset(k=nn, downsample=d), 10)
-    q.put((d, nn, this_rand_scores, this_mut_info, this_conductances, this_times))
+# def mnist_experiment_instance(d, nn, q):
+#     this_rand_scores, this_mut_info, this_conductances, this_times = basic_experiment(
+#         pysc.datasets.MnistDataset(k=nn, downsample=d), 10)
+#     q.put((d, nn, this_rand_scores, this_mut_info, this_conductances, this_times))
 
-def run_mnist_experiment():
-    """
-    Run experiments on the MNIST dataset.
-    """
+# def run_mnist_experiment():
+#     """
+#     Run experiments on the MNIST dataset.
+#     """
 
-    # We will construct the 3-NN graph for the MNIST dataset.
-    k = 3
+#     # We will construct the 3-NN graph for the MNIST dataset.
+#     k = 3
 
-    # Kick off the experiment in a sub-process.
-    q = Queue()
-    p = Process(target=mnist_experiment_instance, args=(None, k, q))
-    p.start()
-    p.join()
+#     # Kick off the experiment in a sub-process.
+#     q = Queue()
+#     p = Process(target=mnist_experiment_instance, args=(None, k, q))
+#     p.start()
+#     p.join()
 
-    # Write out the results
-    with open("results/mnist/results.csv", 'w') as fout:
-        fout.write("k, d, eigenvectors, rand\n")
+#     # Write out the results
+#     with open("results/mnist/results.csv", 'w') as fout:
+#         fout.write("k, d, eigenvectors, rand\n")
 
-        while not q.empty():
-            downsample, k, rand_scores, _, _, _ = q.get()
-            for i in range(2, 11):
-                fout.write(f"{k}, {downsample}, {i}, {rand_scores[i]}\n")
+#         while not q.empty():
+#             downsample, k, rand_scores, _, _, _ = q.get()
+#             for i in range(2, 11):
+#                 fout.write(f"{k}, {downsample}, {i}, {rand_scores[i]}\n")
 
-def usps_experiment_instance(d, nn, q):
-    this_rand_scores, this_mut_info, this_conductances, this_times = basic_experiment(
-        pysc.datasets.UspsDataset(k=nn, downsample=d), 10)
-    q.put((d, nn, this_rand_scores, this_mut_info, this_conductances, this_times))
+# def usps_experiment_instance(d, nn, q):
+#     this_rand_scores, this_mut_info, this_conductances, this_times = basic_experiment(
+#         pysc.datasets.UspsDataset(k=nn, downsample=d), 10)
+#     q.put((d, nn, this_rand_scores, this_mut_info, this_conductances, this_times))
 
-def run_usps_experiment():
-    """
-    Run experiments on the USPS dataset.
-    """
+# def run_usps_experiment():
+#     """
+#     Run experiments on the USPS dataset.
+#     """
 
-    # We will construct the 3-NN graph
-    k = 3
+#     # We will construct the 3-NN graph
+#     k = 3
 
-    # Kick off the experiment ina sub-process
-    q = Queue()
-    p = Process(target=usps_experiment_instance, args=(None, k, q))
-    p.start()
-    p.join()
+#     # Kick off the experiment ina sub-process
+#     q = Queue()
+#     p = Process(target=usps_experiment_instance, args=(None, k, q))
+#     p.start()
+#     p.join()
 
-    # Write out the results
-    with open("results/usps/results.csv", 'w') as fout:
-        fout.write("k, d, eigenvectors, rand\n")
+#     # Write out the results
+#     with open("results/usps/results.csv", 'w') as fout:
+#         fout.write("k, d, eigenvectors, rand\n")
 
-        while not q.empty():
-            downsample, k, rand_scores, _ ,_, _ = q.get()
-            for i in range(2, 11):
-                fout.write(f"{k}, {downsample}, {i}, {rand_scores[i]}\n")
+#         while not q.empty():
+#             downsample, k, rand_scores, _ ,_, _ = q.get()
+#             for i in range(2, 11):
+#                 fout.write(f"{k}, {downsample}, {i}, {rand_scores[i]}\n")
 
 
 ############################################
@@ -404,6 +404,8 @@ def run_bsds_experiment(image_id=None, graph_type="rbf"):
             output_filename = f"results/bsds/downsampled_segs/{dataset.img_idx}.mat"
             save_bsds_segmentations(dataset, segmentations, num_eigenvectors_l, output_filename, upscale=False)
 
+
+#### Input parsing
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Run the experiments.')
