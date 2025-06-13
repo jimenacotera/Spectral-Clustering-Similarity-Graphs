@@ -8,6 +8,7 @@ from scipy import io as sio
 from skimage import metrics as skim
 from skimage import io as skio
 import matplotlib.pyplot as plt
+import argparse
 
 # ----------------------------------------------------------------------
 # Random helpers
@@ -109,11 +110,12 @@ def analyse_one_result(pred_mat: Path, gt_mat: Path
     return ris, vois, eig_nums
 
 
-def analyse_bsds_results(split: str = "test",
-                         out_csv: Path = Path("results/bsds/evaluation.csv"),
+def analyse_bsds_results(exp_name, 
+                         split: str = "test",
                          seg_dir: Path = Path("results/bsds/segs"),
                          gt_root: Path = Path("data/bsds/BSR/BSDS500/data/groundTruth"),
                          ) -> None:
+    out_csv =  Path("results/bsds/csv_results/" +  exp_name + ".csv")
     gt_dir = (gt_root / split).expanduser()
     seg_dir = seg_dir.expanduser()
     if not seg_dir.is_dir():
@@ -233,10 +235,11 @@ def compare_segmentations(img_id: str,
         plt.close()
 
 
-def export_visualisations(seg_dir: Path = Path("results/bsds/segs"),
-                          img_root: Path = Path("data/bsds/BSR/BSDS500/data/images"),
-                          out_dir: Path = Path("results/bsds/visualisations"),
-                          split_priority: tuple[str, ...] = ("test", "train")) -> None:
+def export_visualisations(exp_name ,
+                        seg_dir: Path = Path("results/bsds/segs"),
+                        img_root: Path = Path("data/bsds/BSR/BSDS500/data/images"),
+                        out_dir: Path = Path("results/bsds/visualisations"),
+                        split_priority: tuple[str, ...] = ("test", "train")) -> None:
     seg_dir = seg_dir.expanduser()
     out_dir = out_dir.expanduser()
     if not seg_dir.is_dir():
@@ -244,42 +247,32 @@ def export_visualisations(seg_dir: Path = Path("results/bsds/segs"),
 
     for pred_path in sorted(seg_dir.glob("*.mat")):
         img_id = pred_path.stem
-        save_path = out_dir / f"{img_id}.png"
+        save_path = out_dir / exp_name / f"{img_id}.png"
         compare_segmentations(img_id,
                               seg_dir=seg_dir,
                               img_root=img_root,
                               split_priority=split_priority,
                               save_path=save_path,
                               show=False)
-    print(f"✔  Visualisations saved to {_friendly_save_msg(out_dir)}")
+    print(f"✔  Visualisations saved to {_friendly_save_msg(out_dir / exp_name)}")
 
 
-#### Command line interface
-
-# def _cli():
-#     import argparse
-#     parser = argparse.ArgumentParser(description="BSDS metrics + visuals")
-#     g = parser.add_mutually_exclusive_group(required=True)
-#     g.add_argument("--set", choices=["train", "test"], help="Write evaluation CSV for split")
-#     g.add_argument("--img", help="Interactive preview for one image ID")
-#     g.add_argument("--vis", action="store_true", help="Export montage PNGs for all predictions")
-#     args = parser.parse_args()
-
-#     if args.set:
-#         analyse_bsds_results(split=args.set)
-#     elif args.img:
-#         compare_segmentations(args.img)
-#     else:  # --vis
-#         export_visualisations()
 
 
-# if __name__ == "__main__":
-#     _cli()
+#### Input parsing
+
+def parse_args():
+    parser = argparse.ArgumentParser(description='Analyse BSDS Experiments')
+    parser.add_argument('experiment_name', type=str, 
+                        help="Experiment code name for naming purposes as defined in experiment_configurations.yaml")
+
+    return parser.parse_args()
 
 
-def main(): 
-    analyse_bsds_results()
-    # compare_segmentations()
-    export_visualisations()
+def main():
+    args = parse_args()
+    analyse_bsds_results(exp_name = args.experiment_name)
+    export_visualisations(exp_name = args.experiment_name)
 
-main()
+if __name__ == "__main__":
+    main()

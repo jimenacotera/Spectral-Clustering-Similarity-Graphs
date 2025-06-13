@@ -19,8 +19,8 @@ for experiment in experiments:
 
     subprocess.run(["python3", "experiments.py", data, sim_matrix])
 
-
     # run the evaluation 
+    subprocess.run(["python3", "analyseBSDSExperiments.py"])
 
     # append evaluation to results with the name of the experiment and the configsss
 
