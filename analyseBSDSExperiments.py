@@ -1,0 +1,285 @@
+from __future__ import annotations
+import csv
+from pathlib import Path
+from typing import List, Tuple
+
+import numpy as np
+from scipy import io as sio
+from skimage import metrics as skim
+from skimage import io as skio
+import matplotlib.pyplot as plt
+
+# ----------------------------------------------------------------------
+# Random helpers
+# ----------------------------------------------------------------------
+
+def _to_int_labels(arr: np.ndarray) -> np.ndarray:
+    """Ensure label maps are `int64` (handle floats/NaNs gracefully)."""
+    if not np.issubdtype(arr.dtype, np.integer):
+        arr = np.nan_to_num(arr, nan=0.0).astype(np.int64, copy=False)
+    return arr
+
+
+
+def _comb2(x: np.ndarray | int) -> np.ndarray | int:
+    """n choose 2, element‑wise for arrays (integer arithmetic)."""
+    return x * (x - 1) // 2
+
+# ----------------------------------------------------------------------
+#  Helpers to calculate performance metrics
+# ----------------------------------------------------------------------
+
+def _variation_of_information(seg: np.ndarray, gt: np.ndarray) -> float:
+    seg_i, gt_i = _to_int_labels(seg), _to_int_labels(gt)
+    split, merge = skim.variation_of_information(gt_i, seg_i)
+    return split + merge
+
+def _probabilistic_rand_index(seg: np.ndarray, gt: np.ndarray) -> float:
+    """True (probabilistic) Rand Index ∈ [0,1], higher is better."""
+    seg_flat = _to_int_labels(seg).ravel()
+    gt_flat = _to_int_labels(gt).ravel()
+    N = seg_flat.size
+
+    # Relabel to consecutive ints to keep contingency small
+    _, seg_enc = np.unique(seg_flat, return_inverse=True)
+    _, gt_enc = np.unique(gt_flat, return_inverse=True)
+    n_seg = seg_enc.max() + 1
+    n_gt = gt_enc.max() + 1
+
+    # 2‑D contingency via 1‑D bincount
+    idx = seg_enc * n_gt + gt_enc
+    cont = np.bincount(idx, minlength=n_seg * n_gt).reshape((n_seg, n_gt))
+
+    sum_comb_nij = _comb2(cont).sum(dtype=np.int64)
+    sum_comb_row = _comb2(cont.sum(axis=1)).sum(dtype=np.int64)
+    sum_comb_col = _comb2(cont.sum(axis=0)).sum(dtype=np.int64)
+    total_pairs = _comb2(N)
+
+    # Rand Index formula: (SS + DD) / total_pairs
+    ri = (total_pairs + 2 * sum_comb_nij - sum_comb_row - sum_comb_col) / total_pairs
+    return float(ri)
+
+# ----------------------------------------------------------------------
+#  Helpers to load files 
+# ----------------------------------------------------------------------
+
+def _load_mat_segs(mat_path: Path) -> Tuple[List[np.ndarray], List[int]]:
+    data = sio.loadmat(mat_path, squeeze_me=True, struct_as_record=False)
+    segs_raw = data["segs"]
+    eigs_raw = data["eigs"]
+
+    # Flatten MATLAB cell → Python list
+    if isinstance(segs_raw, np.ndarray) and segs_raw.ndim == 0:
+        segs_list = [segs_raw.item()]
+    elif isinstance(segs_raw, np.ndarray):
+        segs_list = list(segs_raw)
+    else:
+        segs_list = list(segs_raw) if isinstance(segs_raw, (list, tuple)) else [segs_raw]
+
+    segs = [_to_int_labels(np.asarray(s)) for s in segs_list]
+    eigs = (list(eigs_raw) if isinstance(eigs_raw, (np.ndarray, list))
+            else [int(eigs_raw)])
+    assert len(segs) == len(eigs)
+    return segs, eigs
+
+
+def _load_gt(gt_path: Path) -> List[np.ndarray]:
+    data = sio.loadmat(gt_path, squeeze_me=True, struct_as_record=False)
+    gts_raw = data["groundTruth"]
+    if isinstance(gts_raw, np.ndarray) and gts_raw.ndim == 0:
+        gts_raw = [gts_raw.item()]
+    else:
+        gts_raw = list(gts_raw) if isinstance(gts_raw, np.ndarray) else gts_raw
+    return [_to_int_labels(np.asarray(g.Segmentation)) for g in gts_raw]
+
+# ----------------------------------------------------------------------
+# Evaluate bsds
+# ----------------------------------------------------------------------
+
+def analyse_one_result(pred_mat: Path, gt_mat: Path
+                       ) -> Tuple[List[float], List[float], List[int]]:
+    segs, eig_nums = _load_mat_segs(pred_mat)
+    gts = _load_gt(gt_mat)
+    ris, vois = [], []
+    for seg in segs:
+        ri_vals = [_probabilistic_rand_index(seg, gt) for gt in gts]
+        voi_vals = [_variation_of_information(seg, gt) for gt in gts]
+        ris.append(float(np.mean(ri_vals)))
+        vois.append(float(np.mean(voi_vals)))
+    return ris, vois, eig_nums
+
+
+def analyse_bsds_results(split: str = "test",
+                         out_csv: Path = Path("results/bsds/evaluation.csv"),
+                         seg_dir: Path = Path("results/bsds/segs"),
+                         gt_root: Path = Path("data/bsds/BSR/BSDS500/data/groundTruth"),
+                         ) -> None:
+    gt_dir = (gt_root / split).expanduser()
+    seg_dir = seg_dir.expanduser()
+    if not seg_dir.is_dir():
+        raise FileNotFoundError(seg_dir)
+    if not gt_dir.is_dir():
+        raise FileNotFoundError(gt_dir)
+
+    out_csv.parent.mkdir(parents=True, exist_ok=True)
+    with out_csv.open("w", newline="") as fh:
+        writer = csv.writer(fh)
+        writer.writerow(["id", "k", "eigs", "ri", "voi"])
+        for pred_path in sorted(seg_dir.glob("*.mat")):
+            img_id = pred_path.stem
+            gt_path = gt_dir / f"{img_id}.mat"
+            if not gt_path.exists():
+                print(f"[warn] No ground truth for {img_id}, skipping …")
+                continue
+            ris, vois, eigs = analyse_one_result(pred_path, gt_path)
+            # Saving k as the highest num of eigenvectors
+            for ri, voi, eig in zip(ris, vois, eigs):
+                writer.writerow([
+                    img_id,
+                    eigs[-1],                  
+                    eig,                    
+                    f"{ri:.6f}",                     
+                    f"{voi:.6f}"                     
+                ])
+    print(f"✔  Evaluation saved to {out_csv}")
+
+
+# ----------------------------------------------------------------------
+# Create the visualisations
+# ----------------------------------------------------------------------
+
+def _friendly_save_msg(save_path: Path) -> str:
+    """Return a readable path (relative if possible, else absolute)."""
+    try:
+        rel = save_path.resolve().relative_to(Path.cwd().resolve())
+        return str(rel)
+    except ValueError:
+        return str(save_path.resolve())
+
+
+def compare_segmentations(img_id: str,
+                          seg_dir: Path = Path("results/bsds/segs"),
+                          img_root: Path = Path("data/bsds/BSR/BSDS500/data/images"),
+                          split_priority: tuple[str, ...] = ("test", "train"),
+                          gt_root: Path = Path("data/bsds/BSR/BSDS500/data/groundTruth"),
+                          save_path: Path | None = None,
+                          show: bool = True) -> None:
+    pred_file = seg_dir / f"{img_id}.mat"
+    if not pred_file.exists():
+        raise FileNotFoundError(pred_file)
+
+    for split in split_priority:
+        img_path = img_root / split / f"{img_id}.jpg"
+        if img_path.exists():
+            break
+    else:
+        raise FileNotFoundError("Image not found in given splits")
+
+    for split in split_priority:
+        gt_path = gt_root / split / f"{img_id}.mat"
+        if gt_path.exists():
+            break
+    else:
+        raise FileNotFoundError("Ground‑truth not found in given splits")
+
+    image = skio.imread(img_path)
+    segs, eig_nums = _load_mat_segs(pred_file)
+    gts = _load_gt(gt_path)
+
+    # Find segmentation with highest RI and most eigenvalues
+
+    ri_scores = [
+        float(np.mean([_probabilistic_rand_index(seg, gt) for gt in gts]))
+        for seg in segs
+    ]
+
+    idx_best_ri = int(np.argmax(ri_scores))
+    idx_most_eigs = int(np.argmax(eig_nums))
+    chosen = set([idx_best_ri, idx_most_eigs])  
+
+    # Generate the plot
+    # ncols = 1 + len(segs)
+    ncols = 3
+    plt.figure(figsize=(4 * ncols, 4))
+
+    plt.subplot(1, ncols, 1)
+    plt.imshow(image)
+    plt.title("Original")
+    plt.axis("off")
+
+    plt.subplot(1, ncols, 2)
+    plt.imshow(segs[idx_best_ri], interpolation="nearest", cmap="tab20")
+    plt.title("Best RI")
+    plt.axis("off")
+
+    plt.subplot(1, ncols, 3)
+    plt.imshow(segs[idx_most_eigs], interpolation="nearest", cmap="tab20")
+    plt.title("Most Eigenvalues")
+    plt.axis("off")
+
+
+
+
+    plt.tight_layout()
+
+    if save_path is not None:
+        save_path.parent.mkdir(parents=True, exist_ok=True)
+        plt.savefig(save_path, dpi=150, bbox_inches="tight")
+        print(f"[saved] {_friendly_save_msg(save_path)}")
+
+    if show:
+        plt.show()
+    else:
+        plt.close()
+
+
+def export_visualisations(seg_dir: Path = Path("results/bsds/segs"),
+                          img_root: Path = Path("data/bsds/BSR/BSDS500/data/images"),
+                          out_dir: Path = Path("results/bsds/visualisations"),
+                          split_priority: tuple[str, ...] = ("test", "train")) -> None:
+    seg_dir = seg_dir.expanduser()
+    out_dir = out_dir.expanduser()
+    if not seg_dir.is_dir():
+        raise FileNotFoundError(seg_dir)
+
+    for pred_path in sorted(seg_dir.glob("*.mat")):
+        img_id = pred_path.stem
+        save_path = out_dir / f"{img_id}.png"
+        compare_segmentations(img_id,
+                              seg_dir=seg_dir,
+                              img_root=img_root,
+                              split_priority=split_priority,
+                              save_path=save_path,
+                              show=False)
+    print(f"✔  Visualisations saved to {_friendly_save_msg(out_dir)}")
+
+
+#### Command line interface
+
+# def _cli():
+#     import argparse
+#     parser = argparse.ArgumentParser(description="BSDS metrics + visuals")
+#     g = parser.add_mutually_exclusive_group(required=True)
+#     g.add_argument("--set", choices=["train", "test"], help="Write evaluation CSV for split")
+#     g.add_argument("--img", help="Interactive preview for one image ID")
+#     g.add_argument("--vis", action="store_true", help="Export montage PNGs for all predictions")
+#     args = parser.parse_args()
+
+#     if args.set:
+#         analyse_bsds_results(split=args.set)
+#     elif args.img:
+#         compare_segmentations(args.img)
+#     else:  # --vis
+#         export_visualisations()
+
+
+# if __name__ == "__main__":
+#     _cli()
+
+
+def main(): 
+    analyse_bsds_results()
+    # compare_segmentations()
+    export_visualisations()
+
+main()
