@@ -10,6 +10,8 @@ from skimage import io as skio
 import matplotlib.pyplot as plt
 import argparse
 
+
+
 # ----------------------------------------------------------------------
 # Random helpers
 # ----------------------------------------------------------------------
@@ -19,8 +21,6 @@ def _to_int_labels(arr: np.ndarray) -> np.ndarray:
     if not np.issubdtype(arr.dtype, np.integer):
         arr = np.nan_to_num(arr, nan=0.0).astype(np.int64, copy=False)
     return arr
-
-
 
 def _comb2(x: np.ndarray | int) -> np.ndarray | int:
     """n choose 2, element‑wise for arrays (integer arithmetic)."""
@@ -110,26 +110,23 @@ def analyse_one_result(pred_mat: Path, gt_mat: Path
     return ris, vois, eig_nums
 
 
-def analyse_bsds_results(exp_name, 
-                         split: str = "test",
-                         seg_dir: Path = Path("results/bsds/segs"),
-                         gt_root: Path = Path("data/bsds/BSR/BSDS500/data/groundTruth"),
-                         ) -> None:
-    out_csv =  Path("results/bsds/csv_results/" +  exp_name + ".csv")
-    gt_dir = (gt_root / split).expanduser()
-    seg_dir = seg_dir.expanduser()
-    if not seg_dir.is_dir():
-        raise FileNotFoundError(seg_dir)
-    if not gt_dir.is_dir():
-        raise FileNotFoundError(gt_dir)
+def analyse_bsds_results(split: str = "test") -> None:
+    out_csv =  Path("results/bsds/csv_results/" +  experiment_name + ".csv")
+    
+    gt_dir_expanded = (gt_root / split).expanduser()
+    seg_dir_expanded = seg_dir.expanduser()
+    if not seg_dir_expanded.is_dir():
+        raise FileNotFoundError(seg_dir_expanded)
+    if not gt_dir_expanded.is_dir():
+        raise FileNotFoundError(gt_dir_expanded)
 
     out_csv.parent.mkdir(parents=True, exist_ok=True)
     with out_csv.open("w", newline="") as fh:
         writer = csv.writer(fh)
         writer.writerow(["id", "k", "eigs", "ri", "voi"])
-        for pred_path in sorted(seg_dir.glob("*.mat")):
+        for pred_path in sorted(seg_dir_expanded.glob("*.mat")):
             img_id = pred_path.stem
-            gt_path = gt_dir / f"{img_id}.mat"
+            gt_path = gt_dir_expanded / f"{img_id}.mat"
             if not gt_path.exists():
                 print(f"[warn] No ground truth for {img_id}, skipping …")
                 continue
@@ -143,7 +140,7 @@ def analyse_bsds_results(exp_name,
                     f"{ri:.6f}",                     
                     f"{voi:.6f}"                     
                 ])
-    print(f"✔  Evaluation saved to {out_csv}")
+    print(f"[Evaluation saved] to {out_csv}")
 
 
 # ----------------------------------------------------------------------
@@ -160,10 +157,7 @@ def _friendly_save_msg(save_path: Path) -> str:
 
 
 def compare_segmentations(img_id: str,
-                          seg_dir: Path = Path("results/bsds/segs"),
-                          img_root: Path = Path("data/bsds/BSR/BSDS500/data/images"),
                           split_priority: tuple[str, ...] = ("test", "train"),
-                          gt_root: Path = Path("data/bsds/BSR/BSDS500/data/groundTruth"),
                           save_path: Path | None = None,
                           show: bool = True) -> None:
     pred_file = seg_dir / f"{img_id}.mat"
@@ -196,13 +190,15 @@ def compare_segmentations(img_id: str,
     ]
 
     idx_best_ri = int(np.argmax(ri_scores))
-    idx_most_eigs = int(np.argmax(eig_nums))
-    chosen = set([idx_best_ri, idx_most_eigs])  
+    idx_most_eigs = int(np.argmax(eig_nums)) 
 
     # Generate the plot
     # ncols = 1 + len(segs)
     ncols = 3
+
+
     plt.figure(figsize=(4 * ncols, 4))
+    plt.suptitle("Results of experiment " + experiment_name )
 
     plt.subplot(1, ncols, 1)
     plt.imshow(image)
@@ -211,12 +207,18 @@ def compare_segmentations(img_id: str,
 
     plt.subplot(1, ncols, 2)
     plt.imshow(segs[idx_best_ri], interpolation="nearest", cmap="tab20")
-    plt.title("Best RI")
+    plt.title("Best Clustering\n" + 
+              str(eig_nums[idx_best_ri]) + " eigenvalues; "
+              + str(eig_nums[-1]) + " clusters" 
+              + "\nRand Index: " + str( f"{ri_scores[idx_best_ri]:.6f}"))
     plt.axis("off")
 
     plt.subplot(1, ncols, 3)
     plt.imshow(segs[idx_most_eigs], interpolation="nearest", cmap="tab20")
-    plt.title("Most Eigenvalues")
+    plt.title("Most Eigenvalues\n" + 
+              str(eig_nums[idx_most_eigs]) + " eigenvalues; "
+              + str(eig_nums[-1]) + " clusters" 
+              + "\nRand Index: " + str( f"{ri_scores[idx_most_eigs]:.6f}"))
     plt.axis("off")
 
 
@@ -235,8 +237,7 @@ def compare_segmentations(img_id: str,
         plt.close()
 
 
-def export_visualisations(exp_name ,
-                        seg_dir: Path = Path("results/bsds/segs"),
+def export_visualisations(seg_dir: Path = Path("results/bsds/segs"),
                         img_root: Path = Path("data/bsds/BSR/BSDS500/data/images"),
                         out_dir: Path = Path("results/bsds/visualisations"),
                         split_priority: tuple[str, ...] = ("test", "train")) -> None:
@@ -247,14 +248,12 @@ def export_visualisations(exp_name ,
 
     for pred_path in sorted(seg_dir.glob("*.mat")):
         img_id = pred_path.stem
-        save_path = out_dir / exp_name / f"{img_id}.png"
+        save_path = out_dir / experiment_name / f"{img_id}.png"
         compare_segmentations(img_id,
-                              seg_dir=seg_dir,
-                              img_root=img_root,
                               split_priority=split_priority,
                               save_path=save_path,
                               show=False)
-    print(f"✔  Visualisations saved to {_friendly_save_msg(out_dir / exp_name)}")
+    print(f"[Visualisations saved] to {_friendly_save_msg(out_dir / experiment_name)}")
 
 
 
@@ -271,8 +270,18 @@ def parse_args():
 
 def main():
     args = parse_args()
-    analyse_bsds_results(exp_name = args.experiment_name)
-    export_visualisations(exp_name = args.experiment_name)
+    global experiment_name 
+    global seg_dir
+    global gt_root 
+    global img_root
+    experiment_name = args.experiment_name
+    seg_dir = Path("results/bsds/segs")
+    gt_root = Path("data/bsds/BSR/BSDS500/data/groundTruth")
+    img_root = Path("data/bsds/BSR/BSDS500/data/images")
+
+    print("Analysing BSDS experiment named: " + experiment_name)
+    analyse_bsds_results()
+    export_visualisations()
 
 if __name__ == "__main__":
     main()
