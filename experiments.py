@@ -425,10 +425,10 @@ def main():
         run_sbm_experiment(1000, 10, 0.01)
     elif args.experiment == 'grid':
         run_sbm_experiment(1000, 4, 0.01, use_grid=True)
-    elif args.experiment == 'mnist':
-        run_mnist_experiment()
-    elif args.experiment == 'usps':
-        run_usps_experiment()
+    # elif args.experiment == 'mnist':
+    #     run_mnist_experiment()
+    # elif args.experiment == 'usps':
+    #     run_usps_experiment()
     elif args.experiment == 'bsds':
         if args.bsds_image is None:
             logger.warning("\nThe BSDS experiment is very resource-intensive. We recommend running on a compute server.")

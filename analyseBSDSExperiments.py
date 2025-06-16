@@ -140,7 +140,7 @@ def analyse_bsds_results(split: str = "test") -> None:
                     f"{ri:.6f}",                     
                     f"{voi:.6f}"                     
                 ])
-    print(f"[Evaluation saved] to {out_csv}")
+    print(f" [Evaluation saved] to {out_csv}")
 
 
 # ----------------------------------------------------------------------
@@ -229,7 +229,7 @@ def compare_segmentations(img_id: str,
     if save_path is not None:
         save_path.parent.mkdir(parents=True, exist_ok=True)
         plt.savefig(save_path, dpi=150, bbox_inches="tight")
-        print(f"[saved] {_friendly_save_msg(save_path)}")
+        print(f" [saved] {_friendly_save_msg(save_path)}")
 
     if show:
         plt.show()
@@ -253,7 +253,7 @@ def export_visualisations(seg_dir: Path = Path("results/bsds/segs"),
                               split_priority=split_priority,
                               save_path=save_path,
                               show=False)
-    print(f"[Visualisations saved] to {_friendly_save_msg(out_dir / experiment_name)}")
+    print(f" [Visualisations saved] to {_friendly_save_msg(out_dir / experiment_name)}")
 
 
 
