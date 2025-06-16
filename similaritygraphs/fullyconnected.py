@@ -141,4 +141,7 @@ class FullyConnected:
     ### KERNELS
 
     def rbf_kernel(distance, variance):
-        return 0
+        return math.exp(- (distance**2) / (2 * variance))
+    
+    def laplacian_kernel(distance,variance):
+        return math.exp(- (distance) / (math.sqrt(variance)))
