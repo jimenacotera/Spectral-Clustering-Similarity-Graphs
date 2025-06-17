@@ -22,6 +22,7 @@ import math
 from matplotlib import image
 from .sclogging import logger
 
+import similaritygraphs.graph
 
 class Dataset(object):
     """
@@ -108,6 +109,9 @@ class Dataset(object):
             elif graph_type[:3] == "rbf":
                 logger.info(f"Constructing the RBF graph for {self}...")
                 self.graph = sgtl.graph.rbf_graph(self.raw_data, variance=20)
+            elif graph_type[:3] == "fcn": 
+                logger.info(f"Constructing the fully connected graph for {self}...")
+                self.graph = similaritygraphs.graph.fullyConnected(data=self.raw_data, kernelName="rbf", variance=20)
         else:
             logger.debug(f"Skipping constructing graph for the {self.__class__.__name__}.")
 
@@ -409,7 +413,8 @@ class BSDSDataset(Dataset):
                     that_data_point = x * self.downsampled_image_dimensions[1] + y - 1
                     grid_graph_adj_mat[this_data_point, that_data_point] = 0.1
                     grid_graph_adj_mat[that_data_point, this_data_point] = 0.1
-        grid_graph = sgtl.graph.Graph(grid_graph_adj_mat)
+        # grid_graph = sgtl.graph.Graph(grid_graph_adj_mat)
+        grid_graph = similaritygraphs.graph.Graph(grid_graph_adj_mat)
         self.graph += grid_graph
 
     def load_data(self, data_file):
