@@ -10,6 +10,23 @@ The code in this repository is based on https://github.com/pmacg/spectral-cluste
 CHANGE THIS BELOW AND EDIT
 
 
+python3 experiments.py bsds fcn rbf 2018
+
+ python3 experiments.py bsds fcn-laplacian 2018 
+
+
+
+ 
+
+python3 experiments.py [dataset] [similarity graph] [hyperparam] [(optional) image]
+
+
+hyperparams
+- fcn: 
+  rbf
+  laplacian
+- knn: 
+  value of k
 
 
 

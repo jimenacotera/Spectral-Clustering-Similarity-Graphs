@@ -180,11 +180,14 @@ def fullyConnected(data, kernelName, variance=1, threshold=0.1):
 
 
 def parseKernelName(kernelName):
+    print(kernelName)
     if kernelName == "rbf":
         return rbf
+    elif kernelName == "laplacian":
+        return laplacian
     else:
         print("Wrong kernel name used")
-        return rbf
+        return None
 
 #############################################
 ### KERNELS

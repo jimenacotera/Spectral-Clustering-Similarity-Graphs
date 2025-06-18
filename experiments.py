@@ -330,7 +330,8 @@ def get_bsd_num_cluster(gt_filename) -> int:
     return max(2, int(numpy.median(nums_segments)))
 
 
-def run_bsds_experiment(image_id=None, graph_type="rbf"):
+# def run_bsds_experiment( graph_type, hyperparam_0, image_id=None):
+def run_bsds_experiment( graph_type, image_id=None):
     """
     Run experiments on the BSDS dataset.
     :image_files: a list of the BSDS image files to experiment with
@@ -387,7 +388,8 @@ def run_bsds_experiment(image_id=None, graph_type="rbf"):
             num_eigenvectors_l.append(k)
 
 
-        dataset = pysc.datasets.BSDSDataset(id, blur_variance=0, data_directory=images_directory, graph_type=graph_type)
+        # dataset = pysc.datasets.BSDSDataset(id, blur_variance=0, graph_type=graph_type, hyperparam_0=hyperparam_0, data_directory=images_directory)
+        dataset = pysc.datasets.BSDSDataset(id, blur_variance=0, graph_type=graph_type, data_directory=images_directory)
         segmentations = segment_bsds_image(dataset, k, num_eigenvectors_l)
 
         # Save the downscaled image
@@ -412,6 +414,7 @@ def parse_args():
     parser.add_argument('experiment', type=str, choices=['cycle', 'grid', 'mnist', 'usps', 'bsds'],
                         help="which experiment to perform")
     parser.add_argument('graph_type', type=str, help = "Type of similarity graph")
+    # parser.add_argument('hyperparam_0', type=str, help = "Config type for specified similarity graph")
     parser.add_argument('bsds_image', type=str, nargs='?', help="(optional) the BSDS ID of a single BSDS image file to segment")
     # parser.add_argument('bsds_image', type=str, help="(optional) the BSDS ID of a single BSDS image file to segment")
    
@@ -434,8 +437,11 @@ def main():
             logger.warning("\nThe BSDS experiment is very resource-intensive. We recommend running on a compute server.")
             logger.info("Waiting 10 seconds before starting the experiment...")
             time.sleep(10)
-            run_bsds_experiment()
+            # run_bsds_experiment()
+            # run_bsds_experiment(graph_type=args.graph_type, hyperparam_0 = args.hyperparam_0)
+            run_bsds_experiment(graph_type=args.graph_type)
         else:
+            # run_bsds_experiment(image_id=args.bsds_image, graph_type=args.graph_type, hyperparam_0=args.hyperparam_0)
             run_bsds_experiment(image_id=args.bsds_image, graph_type=args.graph_type)
 
 

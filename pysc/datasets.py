@@ -111,7 +111,8 @@ class Dataset(object):
                 self.graph = sgtl.graph.rbf_graph(self.raw_data, variance=20)
             elif graph_type[:3] == "fcn": 
                 logger.info(f"Constructing the fully connected graph for {self}...")
-                self.graph = similaritygraphs.graph.fullyConnected(data=self.raw_data, kernelName="rbf", variance=20)
+                # self.graph = similaritygraphs.graph.fullyConnected(data=self.raw_data, kernelName="rbf", variance=20)
+                self.graph = similaritygraphs.graph.fullyConnected(data=self.raw_data, kernelName=graph_type[4:], variance=20)
         else:
             logger.debug(f"Skipping constructing graph for the {self.__class__.__name__}.")
 

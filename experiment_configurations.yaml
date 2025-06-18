@@ -1,10 +1,21 @@
 experiments: 
-  - name: FULL_01
-    sim_matrix: rbf
-    hyperparam_01: 
 
+###################
+# FULLY CONN EXPERIMENTS
+##################
+  - name: FULL_01
+    data: bsds
+    sim_matrix: fcn-rbf
+
+  - name: FULL_01
+    data: bsds
+    sim_matrix: fcn-laplacian
+
+###################
+# KNN EXPERIMENTS 
+##################
   - name: KNN_01
+    data: bsds
     sim_matrix: knn10
-    hyperparam_01: 
 
 

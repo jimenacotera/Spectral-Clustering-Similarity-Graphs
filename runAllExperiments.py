@@ -11,16 +11,17 @@ with open('experiment_configurations.yaml') as f:
 results = pd.DataFrame()
 
 for experiment in experiments: 
-    name = experiment['name']
+    experiment_name = experiment['name']
+    data = experiment['data']
     sim_matrix = experiment['sim_matrix']
-    hyperparam_01 = experiment['hyperparam_01']
+    # hyperparam_01 = experiment['hyperparam_01']
 
-    data = 'bsds'
+    # data = 'bsds'
 
     subprocess.run(["python3", "experiments.py", data, sim_matrix])
 
     # run the evaluation 
-    subprocess.run(["python3", "analyseBSDSExperiments.py", name ])
+    subprocess.run(["python3", "analyseBSDSExperiments.py", experiment_name ])
 
     # append evaluation to results with the name of the experiment and the configsss
 
