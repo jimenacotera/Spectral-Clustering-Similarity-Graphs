@@ -197,3 +197,20 @@ def rbf(distance, variance):
 
 def laplacian(distance,variance):
     return math.exp(- (distance) / (math.sqrt(variance)))
+
+
+
+def sigmoid(x, y, gamma: float = 1.0, coef0: float = 0.0) -> float:
+    # Needs γ and c inside 'nice' ranges to stay in the valid kernel regime.
+    x, y = np.asarray(x), np.asarray(y)
+    return math.tanh(gamma * float(np.dot(x, y)) + coef0)
+
+def chi2(distance, gamma):
+    # Implemented using distance instead of vectors
+    return math.exp(-gamma * distance)
+
+
+# need to access the actual neighbours for these below
+
+# Cosine 
+# Polynomial
