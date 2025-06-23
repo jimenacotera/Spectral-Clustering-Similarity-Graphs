@@ -13,12 +13,12 @@ results = pd.DataFrame()
 for experiment in experiments: 
     experiment_name = experiment['name']
     data = experiment['data']
-    sim_matrix = experiment['sim_matrix']
+    sim_graph = experiment['sim_graph']
     # hyperparam_01 = experiment['hyperparam_01']
 
     # data = 'bsds'
 
-    subprocess.run(["python3", "experiments.py", data, sim_matrix])
+    subprocess.run(["python3", "experiments.py", data, sim_graph])
 
     # run the evaluation 
     subprocess.run(["python3", "analyseBSDSExperiments.py", experiment_name ])

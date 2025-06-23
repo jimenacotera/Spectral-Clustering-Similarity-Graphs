@@ -131,7 +131,8 @@ class Graph:
     
 
 
-def fullyConnected(data, kernelName, variance=1, threshold=0.1):
+# def fullyConnected(data, kernelName, variance=1, threshold=0.1):
+def fullyConnected(data, kernelName, threshold=0.1):
     """
     Construct a graph from the given data using a radial basis function.
     The weight of the edge between each pair of data points is given by the Gaussian kernel function
@@ -147,18 +148,21 @@ def fullyConnected(data, kernelName, variance=1, threshold=0.1):
     :param threshold: the threshold under which to ignore the weights of an edge. Set to 0 to keep all edges.
     :return: an `sgtl.Graph` object
     """
+    kernel, hyperParam = parseKernelName(kernelName)
+    print(hyperParam)
     # Get the maximum distance which corresponds to the threshold specified.
     if threshold <= 0:
         # Handle the case when threshold is equal to 0 - need to create a fully connected graph.
         max_distance = float('inf')
     else:
-        max_distance = math.sqrt(-2 * variance * math.log(threshold))
+        # max_distance = math.sqrt(-2 * variance * math.log(threshold))
+        max_distance = math.sqrt(-2 * hyperParam * math.log(threshold))
 
     # Create the nearest neighbours for each vertex using sklearn - create a data structure with all neighbours
     # which are close enough to be above the given threshold.
     distances, neighbours = NearestNeighbors(radius=max_distance).fit(data).radius_neighbors(data)
 
-    kernel = parseKernelName(kernelName)
+ 
 
 
     # Now, let's construct the adjacency matrix of the graph iteratively
@@ -169,7 +173,7 @@ def fullyConnected(data, kernelName, variance=1, threshold=0.1):
             if neighbour != vertex:
                 distance = distances[vertex][i]
                 # weight = math.exp(- (distance**2) / (2 * variance))
-                weight = kernel(distance, variance)
+                weight = kernel(distance, hyperParam)
                 adj_mat[vertex, neighbour] = weight
                 adj_mat[neighbour, vertex] = weight
 
@@ -181,10 +185,14 @@ def fullyConnected(data, kernelName, variance=1, threshold=0.1):
 
 def parseKernelName(kernelName):
     print(kernelName)
-    if kernelName == "rbf":
-        return rbf
-    elif kernelName == "laplacian":
-        return laplacian
+    if kernelName[:3] == "rbf":
+        return rbf, int(kernelName[4:])
+    elif kernelName[:3] == "laplacian":
+        return laplacian, int(kernelName[4:])
+    elif kernelName[:3] == "sigmoid":
+        return sigmoid, int(kernelName[4:])
+    elif kernelName[:3] == "chi2":
+        return chi2, int(kernelName[4:])
     else:
         print("Wrong kernel name used")
         return None

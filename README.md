@@ -16,9 +16,9 @@ python3 experiments.py bsds fcn rbf 2018
 
 
 
- 
 
-python3 experiments.py [dataset] [similarity graph] [hyperparam] [(optional) image]
+
+python3 experiments.py [dataset] [similarity graph] [(optional) image]
 
 
 hyperparams

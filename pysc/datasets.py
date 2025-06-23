@@ -106,13 +106,14 @@ class Dataset(object):
                 # We will construct the k-nearest neighbour graph
                 k = int(graph_type[3:])
                 self.graph = sgtl.graph.knn_graph(self.raw_data, k)
-            elif graph_type[:3] == "rbf":
-                logger.info(f"Constructing the RBF graph for {self}...")
-                self.graph = sgtl.graph.rbf_graph(self.raw_data, variance=20)
+            # elif graph_type[:3] == "rbf":
+            #     logger.info(f"Constructing the RBF graph for {self}...")
+            #     self.graph = sgtl.graph.rbf_graph(self.raw_data, variance=20)
             elif graph_type[:3] == "fcn": 
                 logger.info(f"Constructing the fully connected graph for {self}...")
                 # self.graph = similaritygraphs.graph.fullyConnected(data=self.raw_data, kernelName="rbf", variance=20)
-                self.graph = similaritygraphs.graph.fullyConnected(data=self.raw_data, kernelName=graph_type[4:], variance=20)
+                # self.graph = similaritygraphs.graph.fullyConnected(data=self.raw_data, kernelName=graph_type[4:], variance=30)
+                self.graph = similaritygraphs.graph.fullyConnected(data=self.raw_data, kernelName=graph_type[4:])
         else:
             logger.debug(f"Skipping constructing graph for the {self.__class__.__name__}.")
 

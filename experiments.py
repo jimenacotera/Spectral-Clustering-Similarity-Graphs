@@ -261,10 +261,12 @@ def segment_bsds_image(bsds_dataset, num_segments, num_eigenvectors_l):
     _, eigvecs = scipy.sparse.linalg.eigsh(laplacian_matrix, max(num_eigenvectors_l), which='SM')
 
     for num_eigenvectors in num_eigenvectors_l:
-        logger.info(f"Segmenting {bsds_dataset} into {num_segments} segments with {num_eigenvectors} eigenvectors.")
+        # debug
+        print(f"Segmenting {bsds_dataset} into {num_segments} segments with {num_eigenvectors} eigenvectors.")
         found_clusters = pysc.sc.sc_precomputed_eigenvectors(eigvecs, num_segments, num_eigenvectors)
         all_segmentations.append(found_clusters)
 
+    print("found this num of segmentations: " , len(all_segmentations))
     return all_segmentations
 
 
@@ -344,7 +346,7 @@ def run_bsds_experiment( graph_type, image_id=None):
         output_directory = "results/bsds/segs/"
         #image_files = os.listdir(images_directory)
         # avoid segmenting on metadata and hidden files
-        image_files = [f for f in os.listdir(images_directory) if not f.startswith('.')]
+        image_files = [f for f in os.listdir(images_directory) if not f.startswith('.') and f.endswith('.jpg')]
         # #debug
         # print(image_files)
     else:
@@ -381,6 +383,7 @@ def run_bsds_experiment( graph_type, image_id=None):
 
         # Get the number of clusters to look for in this image.
         k = get_bsd_num_cluster(os.path.join(ground_truth_directory, f"{id}.mat"))
+        print("looking for " + str(k) + " clusters")
 
         # Create the list of numbers of eigenvectors to use for the clustering - get 10 data points for each image.
         num_eigenvectors_l = list(range(2, k, int(math.ceil(k/10))))

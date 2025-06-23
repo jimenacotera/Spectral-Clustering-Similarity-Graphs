@@ -37,6 +37,8 @@ def _variation_of_information(seg: np.ndarray, gt: np.ndarray) -> float:
 
 def _probabilistic_rand_index(seg: np.ndarray, gt: np.ndarray) -> float:
     """True (probabilistic) Rand Index ∈ [0,1], higher is better."""
+    # print(str(seg.shape) + " seg shape")
+    # print(str(gt.shape) + " gt shape")
     seg_flat = _to_int_labels(seg).ravel()
     gt_flat = _to_int_labels(gt).ravel()
     N = seg_flat.size
@@ -51,14 +53,36 @@ def _probabilistic_rand_index(seg: np.ndarray, gt: np.ndarray) -> float:
     idx = seg_enc * n_gt + gt_enc
     cont = np.bincount(idx, minlength=n_seg * n_gt).reshape((n_seg, n_gt))
 
+
+    ### RI
+
+    # sum_comb_nij = _comb2(cont).sum(dtype=np.int64)
+    # sum_comb_row = _comb2(cont.sum(axis=1)).sum(dtype=np.int64)
+    # sum_comb_col = _comb2(cont.sum(axis=0)).sum(dtype=np.int64)
+    # total_pairs = _comb2(N)
+
+    # # Rand Index formula: (SS + DD) / total_pairs
+    # ri = (total_pairs + 2 * sum_comb_nij - sum_comb_row - sum_comb_col) / total_pairs
+    # return float(ri)
+
+
+
+    ### Adjsuted RI
     sum_comb_nij = _comb2(cont).sum(dtype=np.int64)
     sum_comb_row = _comb2(cont.sum(axis=1)).sum(dtype=np.int64)
     sum_comb_col = _comb2(cont.sum(axis=0)).sum(dtype=np.int64)
-    total_pairs = _comb2(N)
+    total_pairs  = _comb2(N)
 
-    # Rand Index formula: (SS + DD) / total_pairs
-    ri = (total_pairs + 2 * sum_comb_nij - sum_comb_row - sum_comb_col) / total_pairs
-    return float(ri)
+    if total_pairs == 0:
+        return 1.0   # single-pixel “segmentations” are identical
+
+    # --- ARI formula ---------------------------------------------------------
+    prod = (sum_comb_row * sum_comb_col) / total_pairs
+    numerator   = sum_comb_nij - prod
+    denominator = 0.5 * (sum_comb_row + sum_comb_col) - prod
+
+    # Degenerate case: both partitions have only one cluster
+    return 1.0 if denominator == 0 else float(numerator / denominator)
 
 # ----------------------------------------------------------------------
 #  Helpers to load files 
@@ -68,6 +92,11 @@ def _load_mat_segs(mat_path: Path) -> Tuple[List[np.ndarray], List[int]]:
     data = sio.loadmat(mat_path, squeeze_me=True, struct_as_record=False)
     segs_raw = data["segs"]
     eigs_raw = data["eigs"]
+
+    print("segs:")
+    print(segs_raw.shape)
+    print("eigs")
+    print(eigs_raw.shape)
 
     # Flatten MATLAB cell → Python list
     if isinstance(segs_raw, np.ndarray) and segs_raw.ndim == 0:
@@ -87,6 +116,8 @@ def _load_mat_segs(mat_path: Path) -> Tuple[List[np.ndarray], List[int]]:
 def _load_gt(gt_path: Path) -> List[np.ndarray]:
     data = sio.loadmat(gt_path, squeeze_me=True, struct_as_record=False)
     gts_raw = data["groundTruth"]
+    print("ground truth shape:")
+    print(gts_raw.shape)
     if isinstance(gts_raw, np.ndarray) and gts_raw.ndim == 0:
         gts_raw = [gts_raw.item()]
     else:
@@ -99,6 +130,7 @@ def _load_gt(gt_path: Path) -> List[np.ndarray]:
 
 def analyse_one_result(pred_mat: Path, gt_mat: Path
                        ) -> Tuple[List[float], List[float], List[int]]:
+    print(pred_mat)
     segs, eig_nums = _load_mat_segs(pred_mat)
     gts = _load_gt(gt_mat)
     ris, vois = [], []
@@ -130,6 +162,11 @@ def analyse_bsds_results(split: str = "test") -> None:
             if not gt_path.exists():
                 print(f"[warn] No ground truth for {img_id}, skipping …")
                 continue
+
+            # Debug
+            # print("pred_path: " + str(pred_path) )
+            # print("gt_path: " + str(gt_path))
+
             ris, vois, eigs = analyse_one_result(pred_path, gt_path)
             # Saving k as the highest num of eigenvectors
             for ri, voi, eig in zip(ris, vois, eigs):
@@ -141,6 +178,89 @@ def analyse_bsds_results(split: str = "test") -> None:
                     f"{voi:.6f}"                     
                 ])
     print(f" [Evaluation saved] to {out_csv}")
+
+### Ground truth visualisations of the segmentations 
+def export_groundtruth_visualisation(img_id) -> None:
+    output_dir = Path("results/bsds/visualisations/ground_truth")
+    gt_dir = gt_root.expanduser()
+    out_dir = output_dir.expanduser()
+
+    split_priority = ("test", "train")
+    for split in split_priority:
+        gt_path = gt_root / split / f"{img_id}.mat"
+        if gt_path.exists():
+            break
+    else:
+        raise FileNotFoundError("Ground‑truth not found in given splits")
+
+    gts = _load_gt(gt_path)
+    if not gts:
+        print(f"[warn] {gt_path} is empty – skipping.")
+    else: 
+        # Generate the plots
+        num_segs = len(gts)
+        plt.figure(figsize= (4 * num_segs, 4))
+        plt.suptitle("Ground truth segmentations for image " + img_id)
+        for i in range(num_segs):
+            plt.subplot(1, num_segs, i+1)
+            plt.axis("off")
+
+            gt_seg = gts[i]
+            plt.imshow(gt_seg, cmap="tab20", interpolation="nearest")
+
+        save_path = out_dir / f"{img_id}_groundtruth.png"
+        save_path.parent.mkdir(parents=True, exist_ok=True)
+        plt.savefig(save_path, dpi=150, bbox_inches="tight")
+        plt.close()
+
+        print(f" [saved - Ground Truth] {_friendly_save_msg(save_path)}")
+
+    # plt.subplot(1, ncols, 1)
+    # plt.imshow(image)
+    # plt.title("Original")
+    # plt.axis("off")
+
+    # plt.subplot(1, ncols, 2)
+    # plt.imshow(segs[idx_best_ri], interpolation="nearest", cmap="tab20")
+    # plt.title("Best Clustering\n" + 
+    #           str(eig_nums[idx_best_ri]) + " eigenvalues; "
+    #           + str(eig_nums[-1]) + " clusters" 
+    #         #   + "\nRand Index: " + str( f"{ri_scores[idx_best_ri]:.6f}"))
+    #         + "\nARI: " + str( f"{ri_scores[idx_best_ri]:.6f}"))
+    # plt.axis("off")
+
+    # plt.subplot(1, ncols, 3)
+    # plt.imshow(segs[idx_most_eigs], interpolation="nearest", cmap="tab20")
+    # plt.title("Most Eigenvalues\n" + 
+    #           str(eig_nums[idx_most_eigs]) + " eigenvalues; "
+    #           + str(eig_nums[-1]) + " clusters" 
+    #         #   + "\nRand Index: " + str( f"{ri_scores[idx_most_eigs]:.6f}"))
+    #         + "\nARI: " + str( f"{ri_scores[idx_most_eigs]:.6f}"))
+    # plt.axis("off")
+
+
+
+    
+    # # There are 5 different ground truth segmentations
+    # segmentation_id = 4 # pick the segmentation at this id if the segmentation file contains multiple ones
+
+    # gt_seg = gts[segmentation_id]
+
+    # plt.figure(figsize=(4, 4))
+    # plt.imshow(gt_seg, cmap="tab20", interpolation="nearest")
+    # plt.axis("off")
+    # plt.title("Ground Truth: " + img_id + ".png")
+
+    # save_path = out_dir / f"{img_id}_groundtruth.png"
+    # save_path.parent.mkdir(parents=True, exist_ok=True)
+    # plt.savefig(save_path, dpi=150, bbox_inches="tight")
+    # plt.close()
+
+    # print(f" [saved - Ground Truth] {_friendly_save_msg(save_path)}")
+
+
+
+
 
 
 # ----------------------------------------------------------------------
@@ -210,7 +330,8 @@ def compare_segmentations(img_id: str,
     plt.title("Best Clustering\n" + 
               str(eig_nums[idx_best_ri]) + " eigenvalues; "
               + str(eig_nums[-1]) + " clusters" 
-              + "\nRand Index: " + str( f"{ri_scores[idx_best_ri]:.6f}"))
+            #   + "\nRand Index: " + str( f"{ri_scores[idx_best_ri]:.6f}"))
+            + "\nARI: " + str( f"{ri_scores[idx_best_ri]:.6f}"))
     plt.axis("off")
 
     plt.subplot(1, ncols, 3)
@@ -218,7 +339,8 @@ def compare_segmentations(img_id: str,
     plt.title("Most Eigenvalues\n" + 
               str(eig_nums[idx_most_eigs]) + " eigenvalues; "
               + str(eig_nums[-1]) + " clusters" 
-              + "\nRand Index: " + str( f"{ri_scores[idx_most_eigs]:.6f}"))
+            #   + "\nRand Index: " + str( f"{ri_scores[idx_most_eigs]:.6f}"))
+            + "\nARI: " + str( f"{ri_scores[idx_most_eigs]:.6f}"))
     plt.axis("off")
 
 
@@ -253,6 +375,8 @@ def export_visualisations(seg_dir: Path = Path("results/bsds/segs"),
                               split_priority=split_priority,
                               save_path=save_path,
                               show=False)
+        #Generate ground truth visualisation 
+        export_groundtruth_visualisation(img_id)
     print(f" [Visualisations saved] to {_friendly_save_msg(out_dir / experiment_name)}")
 
 

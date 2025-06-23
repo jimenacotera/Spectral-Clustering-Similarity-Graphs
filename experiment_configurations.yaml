@@ -3,19 +3,27 @@ experiments:
 ###################
 # FULLY CONN EXPERIMENTS
 ##################
-  - name: FULL_01
+  - name: 01_FCN_rbf
     data: bsds
-    sim_matrix: fcn-rbf
+    sim_graph: fcn-rbf-20
 
-  - name: FULL_01
+  - name: 02_FCN_laplacian
     data: bsds
-    sim_matrix: fcn-laplacian
+    sim_graph: fcn-laplacian-20
 
-###################
-# KNN EXPERIMENTS 
-##################
-  - name: KNN_01
+  - name: 03_FCN_sigmoid
     data: bsds
-    sim_matrix: knn10
+    sim_graph: fcn-sigmoid-20
+  
+  - name: 04_FCN_chi2
+    data: bsds
+    sim_graph: fcn-chi2-20
+
+# ###################
+# # KNN EXPERIMENTS 
+# ##################
+#   - name: KNN_01
+#     data: bsds
+#     sim_graph: knn10
 
 
