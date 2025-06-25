@@ -22,6 +22,8 @@ load(inFile, 'segs');
 load(inFile, 'eigs');
 load(gtFile, 'groundTruth');
 
+segs
+
 % The ngtsegs variable holds the number of ground truth segmentations.
 ngtsegs = numel(groundTruth);
 if ngtsegs == 0
@@ -33,6 +35,9 @@ end
 
 ninputsegs = numel(segs);
 thresh = 1:ninputsegs; thresh=thresh';
+
+
+ninputsegs
 
 % Now, the thresh variable is a column vector containing the numbers 1 up
 % to the number of segmentations in the algorithm output (segs) variable.

@@ -93,10 +93,13 @@ def _load_mat_segs(mat_path: Path) -> Tuple[List[np.ndarray], List[int]]:
     segs_raw = data["segs"]
     eigs_raw = data["eigs"]
 
-    print("segs:")
-    print(segs_raw.shape)
-    print("eigs")
-    print(eigs_raw.shape)
+    # Matlab file loader flattens arrays with one dim
+    # Fixing that - issues when there is only one segmentation
+    # But setting squeeze_me to false breaks downstream stuff
+    if isinstance(segs_raw, np.ndarray) and segs_raw.ndim != 1: 
+        segs_raw_new = np.empty(1, dtype=object)
+        segs_raw_new[0] = segs_raw
+        segs_raw = segs_raw_new
 
     # Flatten MATLAB cell → Python list
     if isinstance(segs_raw, np.ndarray) and segs_raw.ndim == 0:
@@ -109,6 +112,8 @@ def _load_mat_segs(mat_path: Path) -> Tuple[List[np.ndarray], List[int]]:
     segs = [_to_int_labels(np.asarray(s)) for s in segs_list]
     eigs = (list(eigs_raw) if isinstance(eigs_raw, (np.ndarray, list))
             else [int(eigs_raw)])
+    
+
     assert len(segs) == len(eigs)
     return segs, eigs
 
@@ -116,8 +121,8 @@ def _load_mat_segs(mat_path: Path) -> Tuple[List[np.ndarray], List[int]]:
 def _load_gt(gt_path: Path) -> List[np.ndarray]:
     data = sio.loadmat(gt_path, squeeze_me=True, struct_as_record=False)
     gts_raw = data["groundTruth"]
-    print("ground truth shape:")
-    print(gts_raw.shape)
+    # print("ground truth shape:")
+    # print(gts_raw.shape)
     if isinstance(gts_raw, np.ndarray) and gts_raw.ndim == 0:
         gts_raw = [gts_raw.item()]
     else:
