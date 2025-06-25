@@ -7,17 +7,21 @@ experiments:
   #   data: bsds
   #   sim_graph: fcn-rbf-20
 
-  - name: 01_1_FCN_rbf
-    data: bsds
-    sim_graph: fcn-rbf-50
+  # - name: 01_1_FCN_rbf
+  #   data: bsds
+  #   sim_graph: fcn-rbf-50
 
-  - name: 01_2_FCN_rbf
-    data: bsds
-    sim_graph: fcn-rbf-100
+  # - name: 01_2_FCN_rbf
+  #   data: bsds
+  #   sim_graph: fcn-rbf-100
 
-  - name: 01_3_FCN_rbf
+  # - name: 01_3_FCN_rbf
+  #   data: bsds
+  #   sim_graph: fcn-rbf-10
+
+  - name: 01_4_FCN_rbf_max_eigs
     data: bsds
-    sim_graph: fcn-rbf-10
+    sim_graph: fcn-rbf-20
 
   # - name: 02_FCN_laplacian
   #   data: bsds

@@ -259,12 +259,17 @@ def segment_bsds_image(bsds_dataset, num_segments, num_eigenvectors_l):
     # First, compute all of the eigenvectors up front
     laplacian_matrix = bsds_dataset.graph.normalised_laplacian_matrix()
     _, eigvecs = scipy.sparse.linalg.eigsh(laplacian_matrix, max(num_eigenvectors_l), which='SM')
+    # _, eigvecs = scipy.sparse.linalg.eigsh(laplacian_matrix, num_eigenvectors_l, which='SM')
 
-    for num_eigenvectors in num_eigenvectors_l:
-        # debug
-        print(f"Segmenting {bsds_dataset} into {num_segments} segments with {num_eigenvectors} eigenvectors.")
-        found_clusters = pysc.sc.sc_precomputed_eigenvectors(eigvecs, num_segments, num_eigenvectors)
-        all_segmentations.append(found_clusters)
+    print(f"Segmenting {bsds_dataset} into {num_segments} segments with {num_eigenvectors_l} eigenvectors.")
+    found_clusters = pysc.sc.sc_precomputed_eigenvectors(eigvecs, num_segments, num_eigenvectors_l[0])
+    all_segmentations.append(found_clusters)
+
+    # for num_eigenvectors in num_eigenvectors_l:
+    #     # debug
+    #     print(f"Segmenting {bsds_dataset} into {num_segments} segments with {num_eigenvectors} eigenvectors.")
+    #     found_clusters = pysc.sc.sc_precomputed_eigenvectors(eigvecs, num_segments, num_eigenvectors)
+    #     all_segmentations.append(found_clusters)
 
     print("found this num of segmentations: " , len(all_segmentations))
     return all_segmentations
@@ -386,9 +391,11 @@ def run_bsds_experiment( graph_type, image_id=None):
         print("looking for " + str(k) + " clusters")
 
         # Create the list of numbers of eigenvectors to use for the clustering - get 10 data points for each image.
-        num_eigenvectors_l = list(range(2, k, int(math.ceil(k/10))))
-        if len(num_eigenvectors_l) == 0 or num_eigenvectors_l[-1] != k:
-            num_eigenvectors_l.append(k)
+        # num_eigenvectors_l = list(range(2, k, int(math.ceil(k/10))))
+        # if len(num_eigenvectors_l) == 0 or num_eigenvectors_l[-1] != k:
+        #     num_eigenvectors_l.append(k)
+
+        num_eigenvectors_l = [k]
 
 
         # dataset = pysc.datasets.BSDSDataset(id, blur_variance=0, graph_type=graph_type, hyperparam_0=hyperparam_0, data_directory=images_directory)
@@ -399,15 +406,19 @@ def run_bsds_experiment( graph_type, image_id=None):
         output_filename = f"results/bsds/downsamples/{dataset.img_idx}.jpg"
         dataset.save_downsampled_image(output_filename)
 
-        # Save the upscaled segmentations
-        for i, num_eigenvectors in enumerate(num_eigenvectors_l):
-            output_filename = f"results/bsds/segs/{dataset.img_idx}.mat"
-            save_bsds_segmentations(dataset, segmentations, num_eigenvectors_l, output_filename)
+        output_filename = f"results/bsds/segs/{dataset.img_idx}.mat"
+        save_bsds_segmentations(dataset, segmentations, num_eigenvectors_l, output_filename)
+        # # Save the upscaled segmentations
+        # for i, num_eigenvectors in enumerate(num_eigenvectors_l):
+        #     output_filename = f"results/bsds/segs/{dataset.img_idx}.mat"
+        #     save_bsds_segmentations(dataset, segmentations, num_eigenvectors_l, output_filename)
 
+        output_filename = f"results/bsds/downsampled_segs/{dataset.img_idx}.mat"
+        save_bsds_segmentations(dataset, segmentations, num_eigenvectors_l, output_filename, upscale=False)
         # Save the downscaled segmentation
-        for i, num_eigenvectors in enumerate(num_eigenvectors_l):
-            output_filename = f"results/bsds/downsampled_segs/{dataset.img_idx}.mat"
-            save_bsds_segmentations(dataset, segmentations, num_eigenvectors_l, output_filename, upscale=False)
+        # for i, num_eigenvectors in enumerate(num_eigenvectors_l):
+        #     output_filename = f"results/bsds/downsampled_segs/{dataset.img_idx}.mat"
+        #     save_bsds_segmentations(dataset, segmentations, num_eigenvectors_l, output_filename, upscale=False)
 
 
 #### Input parsing
