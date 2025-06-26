@@ -315,11 +315,11 @@ def compare_segmentations(img_id: str,
     ]
 
     idx_best_ri = int(np.argmax(ri_scores))
-    idx_most_eigs = int(np.argmax(eig_nums)) 
+    # idx_most_eigs = int(np.argmax(eig_nums)) 
 
     # Generate the plot
     # ncols = 1 + len(segs)
-    ncols = 3
+    ncols = 2
 
 
     plt.figure(figsize=(4 * ncols, 4))
@@ -332,21 +332,20 @@ def compare_segmentations(img_id: str,
 
     plt.subplot(1, ncols, 2)
     plt.imshow(segs[idx_best_ri], interpolation="nearest", cmap="tab20")
-    plt.title("Best Clustering\n" + 
-              str(eig_nums[idx_best_ri]) + " eigenvalues; "
+    plt.title(str(eig_nums[idx_best_ri]) + " eigenvalues; "
               + str(eig_nums[-1]) + " clusters" 
             #   + "\nRand Index: " + str( f"{ri_scores[idx_best_ri]:.6f}"))
             + "\nARI: " + str( f"{ri_scores[idx_best_ri]:.6f}"))
     plt.axis("off")
 
-    plt.subplot(1, ncols, 3)
-    plt.imshow(segs[idx_most_eigs], interpolation="nearest", cmap="tab20")
-    plt.title("Most Eigenvalues\n" + 
-              str(eig_nums[idx_most_eigs]) + " eigenvalues; "
-              + str(eig_nums[-1]) + " clusters" 
-            #   + "\nRand Index: " + str( f"{ri_scores[idx_most_eigs]:.6f}"))
-            + "\nARI: " + str( f"{ri_scores[idx_most_eigs]:.6f}"))
-    plt.axis("off")
+    # plt.subplot(1, ncols, 3)
+    # plt.imshow(segs[idx_most_eigs], interpolation="nearest", cmap="tab20")
+    # plt.title("Most Eigenvalues\n" + 
+    #           str(eig_nums[idx_most_eigs]) + " eigenvalues; "
+    #           + str(eig_nums[-1]) + " clusters" 
+    #         #   + "\nRand Index: " + str( f"{ri_scores[idx_most_eigs]:.6f}"))
+    #         + "\nARI: " + str( f"{ri_scores[idx_most_eigs]:.6f}"))
+    # plt.axis("off")
 
 
 

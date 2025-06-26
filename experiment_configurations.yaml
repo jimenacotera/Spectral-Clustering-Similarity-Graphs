@@ -3,29 +3,39 @@ experiments:
 ###################
 # FULLY CONN EXPERIMENTS
 ##################
-  # - name: 01_FCN_rbf
-  #   data: bsds
-  #   sim_graph: fcn-rbf-20
+  - name: 01_0_FCN_rbf
+    data: bsds
+    sim_graph: fcn-rbf-10
 
-  # - name: 01_1_FCN_rbf
-  #   data: bsds
-  #   sim_graph: fcn-rbf-50
-
-  # - name: 01_2_FCN_rbf
-  #   data: bsds
-  #   sim_graph: fcn-rbf-100
-
-  # - name: 01_3_FCN_rbf
-  #   data: bsds
-  #   sim_graph: fcn-rbf-10
-
-  - name: 01_4_FCN_rbf_max_eigs
+  - name: 01_1_FCN_rbf
     data: bsds
     sim_graph: fcn-rbf-20
 
-  # - name: 02_FCN_laplacian
-  #   data: bsds
-  #   sim_graph: fcn-laplacian-20
+  - name: 01_2_FCN_rbf
+    data: bsds
+    sim_graph: fcn-rbf-50
+
+  - name: 01_3_FCN_rbf
+    data: bsds
+    sim_graph: fcn-rbf-100
+
+  - name: 01_4_FCN_rbf
+    data: bsds
+    sim_graph: fcn-rbf-200
+
+  - name: 02_0_FCN_laplacian
+    data: bsds
+    sim_graph: fcn-lpl-20
+
+  - name: 02_1_FCN_laplacian
+    data: bsds
+    sim_graph: fcn-lpl-50
+
+# Inverse euclid has no variance support currently 
+
+  - name: 02_FCN_inverse_euclid
+    data: bsds
+    sim_graph: fcn-inv-10
 
   # - name: 03_FCN_sigmoid
   #   data: bsds
@@ -38,8 +48,22 @@ experiments:
 # ###################
 # # KNN EXPERIMENTS 
 # ##################
-#   - name: KNN_01
-#     data: bsds
-#     sim_graph: knn10
+  - name: KNN_01
+    data: bsds
+    sim_graph: knn5
+
+  - name: KNN_02
+    data: bsds
+    sim_graph: knn10
+  
+  - name: KNN_03
+    data: bsds
+    sim_graph: knn20
+  
+  - name: KNN_04
+    data: bsds
+    sim_graph: knn30
+
+
 
 

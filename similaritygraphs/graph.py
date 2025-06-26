@@ -187,12 +187,14 @@ def parseKernelName(kernelName):
     print(kernelName)
     if kernelName[:3] == "rbf":
         return rbf, int(kernelName[4:])
-    elif kernelName[:3] == "laplacian":
+    elif kernelName[:3] == "lpl":
         return laplacian, int(kernelName[4:])
-    elif kernelName[:3] == "sigmoid":
-        return sigmoid, int(kernelName[4:])
-    elif kernelName[:3] == "chi2":
-        return chi2, int(kernelName[4:])
+    # elif kernelName[:3] == "sigmoid":
+    #     return sigmoid, int(kernelName[4:])
+    # elif kernelName[:3] == "chi2":
+    #     return chi2, int(kernelName[4:])
+    elif kernelName[:3] == "inv":
+        return inverse_euclidean, int(kernelName[4:])
     else:
         print("Wrong kernel name used")
         return None
@@ -207,15 +209,18 @@ def laplacian(distance,variance):
     return math.exp(- (distance) / (math.sqrt(variance)))
 
 
+def inverse_euclidean(distance,variance):
+    return 1 / (1 + distance)
 
-def sigmoid(x, y, gamma: float = 1.0, coef0: float = 0.0) -> float:
-    # Needs γ and c inside 'nice' ranges to stay in the valid kernel regime.
-    x, y = np.asarray(x), np.asarray(y)
-    return math.tanh(gamma * float(np.dot(x, y)) + coef0)
 
-def chi2(distance, gamma):
-    # Implemented using distance instead of vectors
-    return math.exp(-gamma * distance)
+# def sigmoid(x, y, gamma: float = 1.0, coef0: float = 0.0) -> float:
+#     # Needs γ and c inside 'nice' ranges to stay in the valid kernel regime.
+#     x, y = np.asarray(x), np.asarray(y)
+#     return math.tanh(gamma * float(np.dot(x, y)) + coef0)
+
+# def chi2(distance, gamma):
+#     # Implemented using distance instead of vectors
+#     return math.exp(-gamma * distance)
 
 
 # need to access the actual neighbours for these below
