@@ -158,12 +158,14 @@ def fullyConnected(data, kernelName, threshold=0.1):
         # max_distance = math.sqrt(-2 * variance * math.log(threshold))
         max_distance = math.sqrt(-2 * hyperParam * math.log(threshold))
 
+
+    print(data.shape)
     # Create the nearest neighbours for each vertex using sklearn - create a data structure with all neighbours
     # which are close enough to be above the given threshold.
     distances, neighbours = NearestNeighbors(radius=max_distance).fit(data).radius_neighbors(data)
 
  
-
+    
 
     # Now, let's construct the adjacency matrix of the graph iteratively
     adj_mat = scipy.sparse.lil_matrix((data.shape[0], data.shape[0]))
