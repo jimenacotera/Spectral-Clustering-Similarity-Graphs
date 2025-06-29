@@ -3,36 +3,6 @@ The code in this repository is based on https://github.com/pmacg/spectral-cluste
 
 
 
-
-
-------
-
-CHANGE THIS BELOW AND EDIT
-
-
-python3 experiments.py bsds fcn rbf 2018
-
- python3 experiments.py bsds fcn-laplacian 2018 
-
-
-
-
-
-python3 experiments.py [dataset] [similarity graph] [(optional) image]
-
-
-hyperparams
-- fcn: 
-  rbf
-  laplacian
-- knn: 
-  value of k
-
-
-
-
-
-
 ## Preparing your environment
 Our code is primarily written in Python 3. There is also a matlab
 script for analysing the results of the BSDS experiment.
@@ -53,52 +23,49 @@ cd data/bsds
 tar -xvf BSR_bsds500.tgz
 ```
 
-## Running the experiments
-To run one of the experiments described in the paper, run
+## Running all the experiments
+To run all of the experiments, use the following command
 
 ```bash
-python experiment.py {experiment_name}
+python runAllExperiments.py
 ```
 
-where ```{experiment_name}``` is one of `cycle`, `grid`, `mnist`, `usps`, or `bsds`.
+To add additional experiments or change the configuration of existing ones, modify the ``experiment_configurations.yaml`` file. 
 
-The MNIST and USPS experiments will run easily on a laptop or desktop. The `cycle` and `grid` experiments will also run
-on a personal computer but could take a few minutes since they must run multiple trials for each number of eigenvectors.
 
 **Please note that the full BSDS experiment is quite resource-intensive, and we recommend running on a compute server.**
 
+
+## Running select experiments
 You can instead choose to run the BSDS experiment on only one of the images from the dataset using the following command.
 
 ```bash
-python experiment.py bsds {bsds_image_id}
+python experiments.py bsds {similaritygrahp}{bsds_image_id}
 ```
+
+where ``{similaritygraph}`` can be any of the following: 
+- fcn-rbf-{variance}
+- fcn-lpl-{variance}
+- fcn-inv
+- knn{valueofk}
 
 For example:
 
 ```bash
-python experiment.py bsds 176039
+python experiment.py bsds fcn-rbf-10 2018
 ```
+
+Results can then be generated using the following command: 
+
+```bash 
+python analyseBSDSexperiments.py {experimentname}
+```
+
+where ``{experimentname}`` is the name that will be used for the results directory and csv file.
 
 ## Output
-The output from the experiments will be in the `results` directory, under the appropriate experiment name.
-The BSDS results can be analysed using the matlab script `analyseBsdsResults.m` which will call the
-BSDS benchmarking code to evaluate the image segmentation output.
+The output from the experiments will be in the `results` directory, under the appropriate experiment name. Analysis results will be available under the `results/bsds/csv_results` directory and visualisations of the experiments and ground truth are available under `results/bsds/visualisations`.
 
-### Viewing the BSDS segmentations
-While the `analyseBsdsResults` script will evaluate the BSDS segmentations, if you would like to view the
-segmented images, you can use the provided MATLAB function `compareSegmentations`. This is the method used to generate
-Figure 1 in the paper. For example:
-
-```matlab
-compareSegmentations("176039")
-```
-
-Note that the experiment must have been run for the image ID 176039 before running the MATLAB visualisation script.
-
-## Image Segmentation
-If you are primarily interested in the application of spectral clustering to image segmentation, you could take a look at
-[this GitHub repository](https://github.com/pmacg/spectral-image-segmentation) which includes only the image segmentation code
-from our project and provides a straightforward interface to segment any image file.
 
 ## Reference
 
