@@ -165,7 +165,7 @@ def fullyConnected(data, kernelName, threshold=0.1):
     distances, neighbours = NearestNeighbors(radius=max_distance).fit(data).radius_neighbors(data)
 
  
-    
+
 
     # Now, let's construct the adjacency matrix of the graph iteratively
     adj_mat = scipy.sparse.lil_matrix((data.shape[0], data.shape[0]))
@@ -212,7 +212,7 @@ def laplacian(distance,variance):
 
 
 def inverse_euclidean(distance,variance):
-    return 1 / (1 + distance)
+    return 1 / (1 + distance**variance)
 
 
 # def sigmoid(x, y, gamma: float = 1.0, coef0: float = 0.0) -> float:

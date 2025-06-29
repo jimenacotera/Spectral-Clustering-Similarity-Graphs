@@ -36,21 +36,37 @@ experiments:
     data: bsds
     sim_graph: fcn-lpl-50
   
-  - name: 02_3_FCN_laplacian
+  - name: 02_2_FCN_laplacian
     data: bsds
     sim_graph: fcn-lpl-10
 
-  - name: 02_4_FCN_laplacian
+  - name: 02_3_FCN_laplacian
     data: bsds
     sim_graph: fcn-lpl-30
 
-  - name: 02_5_FCN_laplacian
+  - name: 02_4_FCN_laplacian
     data: bsds
     sim_graph: fcn-lpl-40
 
-# # Inverse euclid has no variance support currently 
+# # Inverse euclidean kernel
 
-  - name: 03_FCN_inverse_euclid
+  - name: 03_0_FCN_inverse_euclid
+    data: bsds
+    sim_graph: fcn-inv-1
+
+  - name: 03_1_FCN_inverse_euclid
+    data: bsds
+    sim_graph: fcn-inv-3
+
+  - name: 03_2_FCN_inverse_euclid
+    data: bsds
+    sim_graph: fcn-inv-5
+
+  - name: 03_3_FCN_inverse_euclid
+    data: bsds
+    sim_graph: fcn-inv-7
+
+  - name: 03_4_FCN_inverse_euclid
     data: bsds
     sim_graph: fcn-inv-10
 
