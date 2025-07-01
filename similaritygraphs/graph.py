@@ -148,18 +148,17 @@ def fullyConnected(data, kernelName, threshold=0.1):
     :param threshold: the threshold under which to ignore the weights of an edge. Set to 0 to keep all edges.
     :return: an `sgtl.Graph` object
     """
-    kernel, hyperParam = parseKernelName(kernelName)
-    print(hyperParam)
+    kernel, hyperParam, max_distance = parseKernelName(kernelName, threshold)
     # Get the maximum distance which corresponds to the threshold specified.
     if threshold <= 0:
         # Handle the case when threshold is equal to 0 - need to create a fully connected graph.
         max_distance = float('inf')
-    else:
-        # max_distance = math.sqrt(-2 * variance * math.log(threshold))
-        max_distance = math.sqrt(-2 * hyperParam * math.log(threshold))
+    # else:
+    #     # max_distance = math.sqrt(-2 * variance * math.log(threshold))
+    #     max_distance = math.sqrt(-2 * hyperParam * math.log(threshold))
 
 
-    print(data.shape)
+
     # Create the nearest neighbours for each vertex using sklearn - create a data structure with all neighbours
     # which are close enough to be above the given threshold.
     distances, neighbours = NearestNeighbors(radius=max_distance).fit(data).radius_neighbors(data)
@@ -185,18 +184,26 @@ def fullyConnected(data, kernelName, threshold=0.1):
 
 
 
-def parseKernelName(kernelName):
+def parseKernelName(kernelName, threshold):
     print(kernelName)
     if kernelName[:3] == "rbf":
-        return rbf, int(kernelName[4:])
+        variance = int(kernelName[4:]) 
+        return rbf, variance ,  math.sqrt(-2 * variance * math.log(threshold))
     elif kernelName[:3] == "lpl":
-        return laplacian, int(kernelName[4:])
+        variance = int(kernelName[4:])
+        return laplacian, variance, (- math.sqrt(variance) * math.log(threshold))
     # elif kernelName[:3] == "sigmoid":
     #     return sigmoid, int(kernelName[4:])
     # elif kernelName[:3] == "chi2":
     #     return chi2, int(kernelName[4:])
     elif kernelName[:3] == "inv":
-        return inverse_euclidean, int(kernelName[4:])
+        variance = kernelName[4:] #string
+        print("variance " , variance)
+        power=int(variance.split("-")[0])
+        epsilon=int(variance.split("-")[1])
+        max_distance = ((1/threshold) - epsilon)**(1/power)
+        print("max_distance before max() ", max_distance)
+        return inverse_euclidean, variance, max(0.1, max_distance)
     else:
         print("Wrong kernel name used")
         return None
@@ -204,15 +211,22 @@ def parseKernelName(kernelName):
 #############################################
 ### KERNELS
 
-def rbf(distance, variance):
-    return math.exp(- (distance**2) / (2 * variance))
+def rbf(distance, hyperparameter ):
+    # hyperparam <- variance
+    return math.exp(- (distance**2) / (2 * hyperparameter))
 
-def laplacian(distance,variance):
-    return math.exp(- (distance) / (math.sqrt(variance)))
+def laplacian(distance,hyperparameter):
+    # hyperparam <- variance
+    return math.exp(- (distance) / (math.sqrt(hyperparameter)))
 
 
-def inverse_euclidean(distance,variance):
-    return 1 / (1 + distance**variance)
+def inverse_euclidean(distance,hyperparameter):
+    # hyperparam <- "power-epsilon"
+    power=int(hyperparameter.split("-")[0])
+    # print("power ", power)
+    epsilon=int(hyperparameter.split("-")[1])
+    # print("epsilon " , epsilon)
+    return 1 / (epsilon + distance**power)
 
 
 # def sigmoid(x, y, gamma: float = 1.0, coef0: float = 0.0) -> float:
