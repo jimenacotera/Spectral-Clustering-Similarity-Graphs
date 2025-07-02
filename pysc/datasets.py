@@ -394,6 +394,14 @@ class BSDSDataset(Dataset):
 
         # super(BSDSDataset, self).__init__(*args, graph_type="rbf", **kwargs)
         super(BSDSDataset, self).__init__(*args, graph_type=graph_type, **kwargs)
+    
+    def getGraphSize(self):
+        if self.graph is None:
+            return 0
+        else: 
+            return self.graph.total_volume() // 2
+
+
 
     def load_graph(self, *args, **kwargs):
         super(BSDSDataset, self).load_graph(*args, **kwargs)

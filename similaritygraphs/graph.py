@@ -68,6 +68,16 @@ class Graph:
     def number_of_vertices(self) -> int:
         """The number of vertices in the graph."""
         return self.adjacency_matrix().shape[0]
+    
+
+    def total_volume(self) -> float:
+        """The total volume of the graph."""
+        return sum(self.degrees)
+    
+    # # Return number of edges in the graph
+    # def getSize(self) -> int: 
+    #     # By definition number of edges = volume of graph // 2
+    #     return self.total_volume // 2
 
     def inverse_sqrt_degree_matrix(self):
         """Construct the square root of the inverse of the diagonal degree matrix of the graph."""
@@ -148,14 +158,17 @@ def fullyConnected(data, kernelName, threshold=0.1):
     :param threshold: the threshold under which to ignore the weights of an edge. Set to 0 to keep all edges.
     :return: an `sgtl.Graph` object
     """
-    kernel, hyperParam, max_distance = parseKernelName(kernelName, threshold)
+    # kernel, hyperParam, max_distance = parseKernelName(kernelName, threshold)
+    kernel, hyperParam = parseKernelName(kernelName)
     # Get the maximum distance which corresponds to the threshold specified.
     if threshold <= 0:
         # Handle the case when threshold is equal to 0 - need to create a fully connected graph.
         max_distance = float('inf')
-    # else:
-    #     # max_distance = math.sqrt(-2 * variance * math.log(threshold))
-    #     max_distance = math.sqrt(-2 * hyperParam * math.log(threshold))
+    elif kernel == inverse_euclidean: 
+        max_distance = math.sqrt(-2 * 10 * math.log(threshold))
+    else:
+        # max_distance = math.sqrt(-2 * variance * math.log(threshold))
+        max_distance = math.sqrt(-2 * hyperParam * math.log(threshold))
 
 
 
@@ -166,7 +179,7 @@ def fullyConnected(data, kernelName, threshold=0.1):
  
 
 
-    # Now, let's construct the adjacency matrix of the graph iteratively
+    # Now, let's construct the adjacency matrix of the graph iterativecly
     adj_mat = scipy.sparse.lil_matrix((data.shape[0], data.shape[0]))
     for vertex in range(data.shape[0]):
         # Get the neighbours of this vertex
@@ -184,26 +197,35 @@ def fullyConnected(data, kernelName, threshold=0.1):
 
 
 
-def parseKernelName(kernelName, threshold):
+# def parseKernelName(kernelName, threshold):
+#     print(kernelName)
+#     if kernelName[:3] == "rbf":
+#         variance = int(kernelName[4:]) 
+#         return rbf, variance ,  math.sqrt(-2 * variance * math.log(threshold))
+#     elif kernelName[:3] == "lpl":
+#         variance = int(kernelName[4:])
+#         return laplacian, variance, (- math.sqrt(variance) * math.log(threshold))
+#     elif kernelName[:3] == "inv":
+#         variance = kernelName[4:] #string
+#         print("variance " , variance)
+#         power=int(variance.split("-")[0])
+#         epsilon=int(variance.split("-")[1])
+#         max_distance = ((1/threshold) - epsilon)**(1/power)
+#         print("max_distance before max() ", max_distance)
+#         return inverse_euclidean, variance, max(0.1, max_distance)
+#     else:
+#         print("Wrong kernel name used")
+#         return None
+
+
+def parseKernelName(kernelName):
     print(kernelName)
     if kernelName[:3] == "rbf":
-        variance = int(kernelName[4:]) 
-        return rbf, variance ,  math.sqrt(-2 * variance * math.log(threshold))
+        return rbf, int(kernelName[4:])
     elif kernelName[:3] == "lpl":
-        variance = int(kernelName[4:])
-        return laplacian, variance, (- math.sqrt(variance) * math.log(threshold))
-    # elif kernelName[:3] == "sigmoid":
-    #     return sigmoid, int(kernelName[4:])
-    # elif kernelName[:3] == "chi2":
-    #     return chi2, int(kernelName[4:])
+        return laplacian, int(kernelName[4:])
     elif kernelName[:3] == "inv":
-        variance = kernelName[4:] #string
-        print("variance " , variance)
-        power=int(variance.split("-")[0])
-        epsilon=int(variance.split("-")[1])
-        max_distance = ((1/threshold) - epsilon)**(1/power)
-        print("max_distance before max() ", max_distance)
-        return inverse_euclidean, variance, max(0.1, max_distance)
+        return inverse_euclidean, kernelName[4:]
     else:
         print("Wrong kernel name used")
         return None
@@ -224,7 +246,7 @@ def inverse_euclidean(distance,hyperparameter):
     # hyperparam <- "power-epsilon"
     power=int(hyperparameter.split("-")[0])
     # print("power ", power)
-    epsilon=int(hyperparameter.split("-")[1])
+    epsilon=float(hyperparameter.split("-")[1])
     # print("epsilon " , epsilon)
     return 1 / (epsilon + distance**power)
 

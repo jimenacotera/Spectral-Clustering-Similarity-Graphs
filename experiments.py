@@ -21,6 +21,7 @@ import pysc.datasets
 import pysc.evaluation
 import pysc.objfunc
 from pysc.sclogging import logger
+import pandas as pd
 
 
 
@@ -338,7 +339,7 @@ def get_bsd_num_cluster(gt_filename) -> int:
 
 
 # def run_bsds_experiment( graph_type, hyperparam_0, image_id=None):
-def run_bsds_experiment( graph_type, image_id=None):
+def run_bsds_experiment(graph_type, image_id=None):
     """
     Run experiments on the BSDS dataset.
     :image_files: a list of the BSDS image files to experiment with
@@ -372,10 +373,12 @@ def run_bsds_experiment( graph_type, image_id=None):
                 # If the target file is not in the training directory, then it's a lost cause.
                 raise Exception("BSDS image ID not found.")
     
-        
+    experiment_stats = []
+    
     for i, file in enumerate(image_files):
         
         id = file.split(".")[0]
+        start = time.perf_counter()
 
         # # Ignore any images we've already tried.
         # if os.path.exists(output_directory + id + ".mat"):
@@ -383,7 +386,7 @@ def run_bsds_experiment( graph_type, image_id=None):
         #     logger.debug(f"Skipping image {file} - output already exists.")
         #     continue
 
-        logger.info(f"Running BSDS experiment with image {file}. (Image {i+1}/{len(image_files)})")
+        # logger.info(f"Running BSDS experiment with image {file}. (Image {i+1}/{len(image_files)})")
         print(f"Running BSDS experiment with image {file}. (Image {i+1}/{len(image_files)})")
 
         # Get the number of clusters to look for in this image.
@@ -401,6 +404,11 @@ def run_bsds_experiment( graph_type, image_id=None):
         # dataset = pysc.datasets.BSDSDataset(id, blur_variance=0, graph_type=graph_type, hyperparam_0=hyperparam_0, data_directory=images_directory)
         dataset = pysc.datasets.BSDSDataset(id, blur_variance=0, graph_type=graph_type, data_directory=images_directory)
         segmentations = segment_bsds_image(dataset, k, num_eigenvectors_l)
+
+        # Record segmentation time and graph size
+        duration = time.perf_counter() - start
+        size = dataset.getGraphSize()
+        experiment_stats.append({'image': id, 'duration': duration, 'graphSize': size})
 
         # Save the downscaled image
         output_filename = f"results/bsds/downsamples/{dataset.img_idx}.jpg"
@@ -420,6 +428,10 @@ def run_bsds_experiment( graph_type, image_id=None):
         #     output_filename = f"results/bsds/downsampled_segs/{dataset.img_idx}.mat"
         #     save_bsds_segmentations(dataset, segmentations, num_eigenvectors_l, output_filename, upscale=False)
 
+    # Save image runtimes to csv
+    runtimes_df = pd.DataFrame(experiment_stats)
+    output_filename = "results/bsds/csv_results/experimentStats.csv"
+    runtimes_df.to_csv(output_filename, index = False)
 
 #### Input parsing
 

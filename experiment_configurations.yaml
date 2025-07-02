@@ -2,114 +2,118 @@ experiments:
 # ###################
 # # FULLY CONN EXPERIMENTS
 # ##################
-#   - name: 01_0_FCN_rbf
-#     data: bsds
-#     sim_graph: fcn-rbf-10
+  - name: 01_0_FCN_rbf
+    data: bsds
+    sim_graph: fcn-rbf-10
 
-#   - name: 01_1_FCN_rbf
-#     data: bsds
-#     sim_graph: fcn-rbf-20
+  - name: 01_1_FCN_rbf
+    data: bsds
+    sim_graph: fcn-rbf-20
 
-#   - name: 01_2_FCN_rbf
-#     data: bsds
-#     sim_graph: fcn-rbf-50
+  - name: 01_2_FCN_rbf
+    data: bsds
+    sim_graph: fcn-rbf-50
 
-#   - name: 01_3_FCN_rbf
-#     data: bsds
-#     sim_graph: fcn-rbf-100
+  - name: 01_3_FCN_rbf
+    data: bsds
+    sim_graph: fcn-rbf-100
 
-#   - name: 01_4_FCN_rbf
-#     data: bsds
-#     sim_graph: fcn-rbf-200
+  - name: 01_4_FCN_rbf
+    data: bsds
+    sim_graph: fcn-rbf-200
 
-#   - name: 01_5_FCN_rbf
-#     data: bsds
-#     sim_graph: fcn-rbf-5
+  - name: 01_5_FCN_rbf
+    data: bsds
+    sim_graph: fcn-rbf-5
 
 # # Laplacian Kernel
 
-#   - name: 02_0_FCN_laplacian
-#     data: bsds
-#     sim_graph: fcn-lpl-20
+  - name: 02_0_FCN_laplacian
+    data: bsds
+    sim_graph: fcn-lpl-20
 
-#   - name: 02_1_FCN_laplacian
-#     data: bsds
-#     sim_graph: fcn-lpl-50
+  - name: 02_1_FCN_laplacian
+    data: bsds
+    sim_graph: fcn-lpl-50
   
-#   - name: 02_2_FCN_laplacian
-#     data: bsds
-#     sim_graph: fcn-lpl-10
+  - name: 02_2_FCN_laplacian
+    data: bsds
+    sim_graph: fcn-lpl-10
 
-#   - name: 02_3_FCN_laplacian
-#     data: bsds
-#     sim_graph: fcn-lpl-30
+  - name: 02_3_FCN_laplacian
+    data: bsds
+    sim_graph: fcn-lpl-30
 
-  # - name: 02_4_FCN_laplacian
-  #   data: bsds
-  #   sim_graph: fcn-lpl-40
+  - name: 02_4_FCN_laplacian
+    data: bsds
+    sim_graph: fcn-lpl-40
 
 # # # Inverse euclidean kernel : power-epsilon
 
-  # - name: 03_0_FCN_inverse_euclid
-  #   data: bsds
-  #   sim_graph: fcn-inv-1-1
+  - name: 03_0_FCN_inverse_euclid
+    data: bsds
+    sim_graph: fcn-inv-1-1
 
-#   - name: 03_1_FCN_inverse_euclid
-#     data: bsds
-#     sim_graph: fcn-inv-3-1
+  - name: 03_1_FCN_inverse_euclid
+    data: bsds
+    sim_graph: fcn-inv-3-1
 
-#   - name: 03_2_FCN_inverse_euclid
-#     data: bsds
-#     sim_graph: fcn-inv-5-1
+  - name: 03_2_FCN_inverse_euclid
+    data: bsds
+    sim_graph: fcn-inv-5-1
 
-#   - name: 03_3_FCN_inverse_euclid
-#     data: bsds
-#     sim_graph: fcn-inv-7-1
+  - name: 03_3_FCN_inverse_euclid
+    data: bsds
+    sim_graph: fcn-inv-7-1
 
-#   - name: 03_4_FCN_inverse_euclid
-#     data: bsds
-#     sim_graph: fcn-inv-10-1
+  - name: 03_4_FCN_inverse_euclid
+    data: bsds
+    sim_graph: fcn-inv-10-1
 
   # Inv euclidean with power 1 and different epsilons
   - name: 03_5_FCN_inverse_euclid
     data: bsds
+    sim_graph: fcn-inv-1-0.1
+
+  - name: 03_6_FCN_inverse_euclid
+    data: bsds
+    sim_graph: fcn-inv-1-0.25
+
+  - name: 03_7_FCN_inverse_euclid
+    data: bsds
     sim_graph: fcn-inv-1-0.5
 
-  - name: 03_6_FCN_inverse_euclid
+  - name: 03_8_FCN_inverse_euclid
     data: bsds
-    sim_graph: fcn-inv-1-1.5
-
-  - name: 03_6_FCN_inverse_euclid
-    data: bsds
-    sim_graph: fcn-inv-1-2
+    sim_graph: fcn-inv-1-0.75
 
 # # # ###################
 # # # # KNN EXPERIMENTS 
 # # # ##################
-#   - name: KNN_01
-#     data: bsds
-#     sim_graph: knn5
+  - name: KNN_01
+    data: bsds
+    sim_graph: knn5
 
-#   - name: KNN_02
-#     data: bsds
-#     sim_graph: knn10
+  - name: KNN_02
+    data: bsds
+    sim_graph: knn10
   
-#   - name: KNN_03
-#     data: bsds
-#     sim_graph: knn20
+  - name: KNN_03
+    data: bsds
+    sim_graph: knn20
   
-#   - name: KNN_04
-#     data: bsds
-#     sim_graph: knn30
+  - name: KNN_04
+    data: bsds
+    sim_graph: knn30
 
-#   - name: KNN_05
-#     data: bsds
-#     sim_graph: knn3
+  - name: KNN_05
+    data: bsds
+    sim_graph: knn3
 
-#   - name: KNN_06
-#     data: bsds
-#     sim_graph: knn15
+  - name: KNN_06
+    data: bsds
+    sim_graph: knn15
 
-#   - name: KNN_07
-#     data: bsds
-#     sim_graph: knn25
+  - name: KNN_07
+    data: bsds
+    sim_graph: knn25
