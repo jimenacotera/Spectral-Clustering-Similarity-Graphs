@@ -400,7 +400,8 @@ def run_bsds_experiment(graph_type, image_id=None):
 
         num_eigenvectors_l = [k]
 
-
+        # Check what dataset to use
+        # dataset = pysc.datasets.BSDSDatasetSparsifier()
         # dataset = pysc.datasets.BSDSDataset(id, blur_variance=0, graph_type=graph_type, hyperparam_0=hyperparam_0, data_directory=images_directory)
         dataset = pysc.datasets.BSDSDataset(id, blur_variance=0, graph_type=graph_type, data_directory=images_directory)
         segmentations = segment_bsds_image(dataset, k, num_eigenvectors_l)
@@ -427,6 +428,7 @@ def run_bsds_experiment(graph_type, image_id=None):
         # for i, num_eigenvectors in enumerate(num_eigenvectors_l):
         #     output_filename = f"results/bsds/downsampled_segs/{dataset.img_idx}.mat"
         #     save_bsds_segmentations(dataset, segmentations, num_eigenvectors_l, output_filename, upscale=False)
+
 
     # Save image runtimes to csv
     runtimes_df = pd.DataFrame(experiment_stats)

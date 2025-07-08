@@ -5513,3 +5513,15 @@ The BSDS experiment is very resource-intensive. We recommend running on a comput
 The BSDS experiment is very resource-intensive. We recommend running on a compute server.
 2025-07-02 16:01:19,250 - WARNING - experiments.py:463 - main() - 
 The BSDS experiment is very resource-intensive. We recommend running on a compute server.
+2025-07-06 13:52:01,230 - WARNING - experiments.py:463 - main() - 
+The BSDS experiment is very resource-intensive. We recommend running on a compute server.
+2025-07-06 14:15:53,166 - WARNING - experiments.py:463 - main() - 
+The BSDS experiment is very resource-intensive. We recommend running on a compute server.
+2025-07-06 14:16:36,713 - WARNING - experiments.py:463 - main() - 
+The BSDS experiment is very resource-intensive. We recommend running on a compute server.
+2025-07-06 14:18:59,632 - WARNING - experiments.py:464 - main() - 
+The BSDS experiment is very resource-intensive. We recommend running on a compute server.
+2025-07-08 14:08:09,294 - WARNING - experiments.py:465 - main() - 
+The BSDS experiment is very resource-intensive. We recommend running on a compute server.
+2025-07-08 14:09:16,541 - WARNING - experiments.py:465 - main() - 
+The BSDS experiment is very resource-intensive. We recommend running on a compute server.

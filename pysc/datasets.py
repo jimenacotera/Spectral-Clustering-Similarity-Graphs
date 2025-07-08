@@ -32,7 +32,8 @@ class Dataset(object):
       - a ground truth clustering
     """
 
-    def __init__(self, data_file=None, gt_clusters_file=None, graph_file=None, num_data_points=None, graph_type="knn10"):
+    def __init__(self, data_file=None, gt_clusters_file=None, graph_file=None,
+                  num_data_points=None, graph_type="knn10"):
         """
         Intiialise the dataset, optionally specifying a data file.
         """
@@ -55,7 +56,8 @@ class Dataset(object):
                           gt_clusters_file: Optional[str],
                           graph_file: Optional[str],
                           kwargs: Dict[str, Optional[str]]):
-        """Set the default values of the data file and gt_clusters file in the keyword arguments."""
+        """Set the default values of the data file and gt_clusters 
+        file in the keyword arguments."""
         if 'data_file' not in kwargs:
             kwargs['data_file'] = data_file
         if 'gt_clusters_file' not in kwargs:
@@ -106,14 +108,15 @@ class Dataset(object):
                 # We will construct the k-nearest neighbour graph
                 k = int(graph_type[3:])
                 self.graph = sgtl.graph.knn_graph(self.raw_data, k)
-            # elif graph_type[:3] == "rbf":
-            #     logger.info(f"Constructing the RBF graph for {self}...")
-            #     self.graph = sgtl.graph.rbf_graph(self.raw_data, variance=20)
             elif graph_type[:3] == "fcn": 
                 logger.info(f"Constructing the fully connected graph for {self}...")
                 # self.graph = similaritygraphs.graph.fullyConnected(data=self.raw_data, kernelName="rbf", variance=20)
                 # self.graph = similaritygraphs.graph.fullyConnected(data=self.raw_data, kernelName=graph_type[4:], variance=30)
                 self.graph = similaritygraphs.graph.fullyConnected(data=self.raw_data, kernelName=graph_type[4:])
+            elif graph_type[:3] == "spa": 
+                logger.info(f"Constructing sparsifier for {self}...")
+                self.graph = similaritygraphs.graph.spectralSparsifier(data=self.raw_data)
+                # self.graph = similaritygraphs.graph.fullyConnected(data=self.raw_data, kernelName="inv-1-0.25")
         else:
             logger.debug(f"Skipping constructing graph for the {self.__class__.__name__}.")
 
@@ -489,6 +492,133 @@ class BSDSDataset(Dataset):
 
         # Save the image to the given file
         image.imsave(filename, img / 255)
+
+    def __str__(self):
+        return f"bsds({self.img_idx})"
+    
+
+
+
+
+class BSDSDatasetSparsifier(Dataset):
+
+    def __init__(self, img_idx, *args,
+                 data_directory="data/bsds/BSR/bench/data/images/", graph_type="sparse", **kwargs):
+        """Construct a dataset from a single image in the BSDS dataset.
+
+        To be used with one of the sparsifier graphs. 
+        This differs from above BSDSDataset in that no downsampling or 
+        blurring is done to the image. 
+        """
+        print("Building BSDS dataset for sparsifier")
+        self.img_idx = img_idx
+        self.image_filename = os.path.join(data_directory, f"{img_idx}.jpg")
+        self.original_image_dimensions = []
+        # self.downsampled_image_dimensions = []
+        # self.downsample_factor = downsample_factor
+        # self.blur_variance = blur_variance
+        # self.graph_type = graph_type
+
+        # super(BSDSDataset, self).__init__(*args, graph_type="rbf", **kwargs)
+        super(BSDSDataset, self).__init__(*args, graph_type=graph_type, **kwargs)
+    
+
+    def getGraphSize(self):
+        if self.graph is None:
+            return 0
+        else: 
+            return self.graph.total_volume() // 2
+
+
+
+    def load_graph(self, *args, **kwargs):
+        super(BSDSDataset, self).load_graph(*args, **kwargs)
+
+        # Add a grid to the graph, with weight 0.01.
+        # this is to ensure the graph is at least connected
+        logger.info(f"Adding grid graph to image graph for {self}...")
+        grid_graph_adj_mat = sp.sparse.lil_matrix((self.num_data_points, self.num_data_points))
+        for x in range(self.downsampled_image_dimensions[0]):
+            for y in range(self.downsampled_image_dimensions[1]):
+                this_data_point = x * self.downsampled_image_dimensions[1] + y
+
+                # Add the four orthogonal edges
+                if x > 0:
+                    that_data_point = (x - 1) * self.downsampled_image_dimensions[1] + y
+                    grid_graph_adj_mat[this_data_point, that_data_point] = 0.1
+                    grid_graph_adj_mat[that_data_point, this_data_point] = 0.1
+                if y > 0:
+                    that_data_point = x * self.downsampled_image_dimensions[1] + y - 1
+                    grid_graph_adj_mat[this_data_point, that_data_point] = 0.1
+                    grid_graph_adj_mat[that_data_point, this_data_point] = 0.1
+
+
+        # grid_graph = sgtl.graph.Graph(grid_graph_adj_mat)
+        grid_graph = similaritygraphs.graph.Graph(grid_graph_adj_mat)
+        self.graph += grid_graph
+
+    def load_data(self, data_file):
+        """
+        Load the dataset from the image. Each pixel in the image is a data point. Each data point will have 5
+        dimensions, namely the normalised 'rgb' values and the (x, y) coordinates of the pixel in the image.
+
+        To reformat the data to be a manageable size, we downsample by a factor of 3.
+
+        :param data_file:
+        :return:
+        """
+        img = image.imread(self.image_filename)
+        self.original_image_dimensions = (img.shape[0], img.shape[1])
+
+        # Compute the downsample factor if needed
+        # if self.downsample_factor is None:
+        #     current_num_vertices = self.original_image_dimensions[0] * self.original_image_dimensions[1]
+
+        #     if current_num_vertices > 20000:
+        #         self.downsample_factor = int(math.sqrt(current_num_vertices / 20000))
+        #     else:
+        #         self.downsample_factor = 1
+
+        # # Do the downsampling here
+        # img_l1 = skimage.measure.block_reduce(img[:, :, 0], self.downsample_factor, func=numpy.mean)
+        # img_l2 = skimage.measure.block_reduce(img[:, :, 1], self.downsample_factor, func=numpy.mean)
+        # img_l3 = skimage.measure.block_reduce(img[:, :, 2], self.downsample_factor, func=numpy.mean)
+        # img = numpy.stack([img_l1, img_l2, img_l3], axis=2)
+        # self.downsampled_image_dimensions = (img.shape[0], img.shape[1])
+
+        # Blur the image slightly
+        # img = skimage.filters.gaussian(img, sigma=self.blur_variance)
+
+        # Extract the data points from the image
+        self.num_data_points = img.shape[0] * img.shape[1]
+        self.raw_data = []
+        for x in range(img.shape[0]):
+            for y in range(img.shape[1]):
+                self.raw_data.append([img[x, y, 0],
+                                      img[x, y, 1],
+                                      img[x, y, 2],
+                                      x,
+                                      y])
+        self.raw_data = numpy.array(self.raw_data)
+
+    # def save_downsampled_image(self, filename):
+    #     """
+    #     Save the downsampled image to the given file.
+
+    #     :param filename:
+    #     """
+    #     # Load and downsample the image
+    #     img = image.imread(self.image_filename)
+    #     img_l1 = skimage.measure.block_reduce(img[:, :, 0], self.downsample_factor, func=numpy.mean)
+    #     img_l2 = skimage.measure.block_reduce(img[:, :, 1], self.downsample_factor, func=numpy.mean)
+    #     img_l3 = skimage.measure.block_reduce(img[:, :, 2], self.downsample_factor, func=numpy.mean)
+    #     img = numpy.stack([img_l1, img_l2, img_l3], axis=2)
+
+    #     # Blur the image slightly
+    #     img = skimage.filters.gaussian(img, sigma=self.blur_variance)
+
+    #     # Save the image to the given file
+    #     image.imsave(filename, img / 255)
 
     def __str__(self):
         return f"bsds({self.img_idx})"

@@ -78,7 +78,9 @@ def _probabilistic_rand_index(seg: np.ndarray, gt: np.ndarray) -> float:
         return 1.0   # single-pixel “segmentations” are identical
 
     # --- ARI formula ---------------------------------------------------------
-    prod = (sum_comb_row * sum_comb_col) / total_pairs
+    # prod = (sum_comb_row * sum_comb_col) / total_pairs
+    prod = sum_comb_row * (sum_comb_col / total_pairs)
+
     numerator   = sum_comb_nij - prod
     denominator = 0.5 * (sum_comb_row + sum_comb_col) - prod
 
