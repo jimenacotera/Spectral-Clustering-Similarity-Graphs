@@ -10,3 +10,4 @@ pandas
 scikit-image
 h5py
 scikit-learn
+stag
