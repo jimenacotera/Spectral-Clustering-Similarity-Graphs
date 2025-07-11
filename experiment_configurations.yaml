@@ -127,6 +127,16 @@ experiments:
 # # # # SPARSIFIER EXPERIMENTS
 # # # ##################
 
-  - name: SPA_SPEC_01
+  # - name: SPA_SPEC_01
+  #   data: bsds
+  #   sim_graph: sparsifier-spec
+
+
+# Cluster Preserving Sparsifier
+  - name: SPA_CLUS_01
     data: bsds
-    sim_graph: sparsifier-spec
+    sim_graph: sparsifier-clus-0.001
+
+  - name: SPA_CLUS_02
+    data: bsds
+    sim_graph: sparsifier-clus-0.0001

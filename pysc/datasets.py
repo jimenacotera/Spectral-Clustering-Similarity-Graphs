@@ -21,6 +21,7 @@ import scipy.sparse
 import math
 from matplotlib import image
 from .sclogging import logger
+from stag import cluster, graph, graphio, utility
 
 import similaritygraphs.graph
 
@@ -115,8 +116,22 @@ class Dataset(object):
                 self.graph = similaritygraphs.graph.fullyConnected(data=self.raw_data, kernelName=graph_type[4:])
             elif graph_type[:3] == "spa": 
                 logger.info(f"Constructing sparsifier for {self}...")
-                self.graph = similaritygraphs.graph.spectralSparsifier(data=self.raw_data)
+                if graph_type.startswith("sparsifier-spec"):
+                    self.graph = similaritygraphs.graph.spectralSparsifier(data=self.raw_data)
                 # self.graph = similaritygraphs.graph.fullyConnected(data=self.raw_data, kernelName="inv-1-0.25")
+                # else: 
+                #     # assume other option is cluster preserving sparsifier
+                #     print("Creating dataset for cluster preserving sparsifier")
+                #     gamma = 0.001 # param for similarity kernel TODO confim this 
+                #     print("1 building dense mat")
+                #     data_dense = utility.DenseMat(self.raw_data)
+                #     print("2 building approx sim graph")
+                #     g = cluster.approximate_similarity_graph(data_dense, a = gamma)
+                #     print("3 done with that")
+                #     # sci = g.to_scipy()
+                #     # self.graph = similaritygraphs.graph(g.adjacency())
+                #     arr = numpy.array(g.adjacency())
+                #     self.graph = sgtl.Graph(arr)
         else:
             logger.debug(f"Skipping constructing graph for the {self.__class__.__name__}.")
 
@@ -386,7 +401,7 @@ class BSDSDataset(Dataset):
         :param blur_variance: The variance of the gaussian blur applied to the downsampled image
         :param data_directory: The base directory containing the dataset images.
         """
-        print("Building BSDS dataset")
+        # print("Building BSDS dataset")
         self.img_idx = img_idx
         self.image_filename = os.path.join(data_directory, f"{img_idx}.jpg")
         self.original_image_dimensions = []
@@ -502,25 +517,29 @@ class BSDSDataset(Dataset):
 
 class BSDSDatasetSparsifier(Dataset):
 
-    def __init__(self, img_idx, *args,
-                 data_directory="data/bsds/BSR/bench/data/images/", graph_type="sparse", **kwargs):
+    def __init__(self
+                 , img_idx
+                 , *args
+                 , data_directory="data/bsds/BSR/bench/data/images/"
+                 , graph_type="sparse"
+                 , **kwargs):
         """Construct a dataset from a single image in the BSDS dataset.
 
         To be used with one of the sparsifier graphs. 
         This differs from above BSDSDataset in that no downsampling or 
         blurring is done to the image. 
         """
-        print("Building BSDS dataset for sparsifier")
+        # print("Building BSDS dataset for sparsifier")
         self.img_idx = img_idx
         self.image_filename = os.path.join(data_directory, f"{img_idx}.jpg")
         self.original_image_dimensions = []
         # self.downsampled_image_dimensions = []
         # self.downsample_factor = downsample_factor
         # self.blur_variance = blur_variance
-        # self.graph_type = graph_type
+        self.graph_type = graph_type
 
         # super(BSDSDataset, self).__init__(*args, graph_type="rbf", **kwargs)
-        super(BSDSDataset, self).__init__(*args, graph_type=graph_type, **kwargs)
+        super(BSDSDatasetSparsifier, self).__init__(*args, graph_type=graph_type, **kwargs)
     
 
     def getGraphSize(self):
@@ -532,30 +551,41 @@ class BSDSDatasetSparsifier(Dataset):
 
 
     def load_graph(self, *args, **kwargs):
-        super(BSDSDataset, self).load_graph(*args, **kwargs)
+        if self.graph_type.startswith("sparsifier-clus"): 
+            # print("Creating dataset for cluster preserving sparsifier")
 
-        # Add a grid to the graph, with weight 0.01.
-        # this is to ensure the graph is at least connected
-        logger.info(f"Adding grid graph to image graph for {self}...")
-        grid_graph_adj_mat = sp.sparse.lil_matrix((self.num_data_points, self.num_data_points))
-        for x in range(self.downsampled_image_dimensions[0]):
-            for y in range(self.downsampled_image_dimensions[1]):
-                this_data_point = x * self.downsampled_image_dimensions[1] + y
+            # Parameter for similarity kernel for Cluster Preserving Sparsifier
+            gamma = float(self.graph_type[16:])
+            # print("1 building dense mat")
+            data_dense = utility.DenseMat(self.raw_data)
+            # print("2 building approx sim graph")
+            self.graph = cluster.approximate_similarity_graph(data_dense, a = gamma)
+            # print("3 done with that")
+        else:  # Spectral Sparsifier
+            super(BSDSDatasetSparsifier, self).load_graph(*args, **kwargs)
 
-                # Add the four orthogonal edges
-                if x > 0:
-                    that_data_point = (x - 1) * self.downsampled_image_dimensions[1] + y
-                    grid_graph_adj_mat[this_data_point, that_data_point] = 0.1
-                    grid_graph_adj_mat[that_data_point, this_data_point] = 0.1
-                if y > 0:
-                    that_data_point = x * self.downsampled_image_dimensions[1] + y - 1
-                    grid_graph_adj_mat[this_data_point, that_data_point] = 0.1
-                    grid_graph_adj_mat[that_data_point, this_data_point] = 0.1
+            # Add a grid to the graph, with weight 0.01.
+            # this is to ensure the graph is at least connected
+            logger.info(f"Adding grid graph to image graph for {self}...")
+            grid_graph_adj_mat = sp.sparse.lil_matrix((self.num_data_points, self.num_data_points))
+            for x in range(self.original_image_dimensions[0]):
+                for y in range(self.original_image_dimensions[1]):
+                    this_data_point = x * self.original_image_dimensions[1] + y
+
+                    # Add the four orthogonal edges
+                    if x > 0:
+                        that_data_point = (x - 1) * self.original_image_dimensions[1] + y
+                        grid_graph_adj_mat[this_data_point, that_data_point] = 0.1
+                        grid_graph_adj_mat[that_data_point, this_data_point] = 0.1
+                    if y > 0:
+                        that_data_point = x * self.original_image_dimensions[1] + y - 1
+                        grid_graph_adj_mat[this_data_point, that_data_point] = 0.1
+                        grid_graph_adj_mat[that_data_point, this_data_point] = 0.1
 
 
-        # grid_graph = sgtl.graph.Graph(grid_graph_adj_mat)
-        grid_graph = similaritygraphs.graph.Graph(grid_graph_adj_mat)
-        self.graph += grid_graph
+            # grid_graph = sgtl.graph.Graph(grid_graph_adj_mat)
+            grid_graph = similaritygraphs.graph.Graph(grid_graph_adj_mat)
+            self.graph += grid_graph
 
     def load_data(self, data_file):
         """

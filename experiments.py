@@ -257,8 +257,12 @@ def segment_bsds_image(bsds_dataset, num_segments, num_eigenvectors_l):
     """
     all_segmentations = []
 
-    # First, compute all of the eigenvectors up front
-    laplacian_matrix = bsds_dataset.graph.normalised_laplacian_matrix()
+    # First, compute all of the eigenvectors up front 
+    if bsds_dataset.graph_type.startswith("sparsifier-clus"):
+        # Cluster preserving sparsifier
+        laplacian_matrix= bsds_dataset.graph.laplacian().to_scipy()
+    else:
+        laplacian_matrix = bsds_dataset.graph.normalised_laplacian_matrix()
     _, eigvecs = scipy.sparse.linalg.eigsh(laplacian_matrix, max(num_eigenvectors_l), which='SM')
     # _, eigvecs = scipy.sparse.linalg.eigsh(laplacian_matrix, num_eigenvectors_l, which='SM')
 
@@ -272,7 +276,7 @@ def segment_bsds_image(bsds_dataset, num_segments, num_eigenvectors_l):
     #     found_clusters = pysc.sc.sc_precomputed_eigenvectors(eigvecs, num_segments, num_eigenvectors)
     #     all_segmentations.append(found_clusters)
 
-    print("found this num of segmentations: " , len(all_segmentations))
+    # print("found this num of segmentations: " , len(all_segmentations))
     return all_segmentations
 
 
@@ -300,15 +304,17 @@ def save_bsds_segmentations(bsds_dataset, segmentations, eigenvectors_l, filenam
 
         # Construct the labelled image with the downsampled dimensions
         labelled_image = numpy.array(pixel_labels, dtype="int32")
-        labelled_image = numpy.reshape(labelled_image, bsds_dataset.downsampled_image_dimensions) + 1
+        # labelled_image = numpy.reshape(labelled_image, bsds_dataset.downsampled_image_dimensions) + 1
+        labelled_image = numpy.reshape(labelled_image, bsds_dataset.original_image_dimensions) + 1
 
-        # Scale up the segmentation by taking the appropriate tensor product
-        labelled_image_upsample =\
-            numpy.kron(labelled_image, numpy.ones((bsds_dataset.downsample_factor, bsds_dataset.downsample_factor)))
-        labelled_image_upsample = labelled_image_upsample[:bsds_dataset.original_image_dimensions[0],
-                                                          :bsds_dataset.original_image_dimensions[1]]
+        # # Scale up the segmentation by taking the appropriate tensor product
+        # labelled_image_upsample =\
+        #     numpy.kron(labelled_image, numpy.ones((bsds_dataset.downsample_factor, bsds_dataset.downsample_factor)))
+        # labelled_image_upsample = labelled_image_upsample[:bsds_dataset.original_image_dimensions[0],
+        #                                                   :bsds_dataset.original_image_dimensions[1]]
 
-        seg_cell[seg_i] = labelled_image_upsample if upscale else labelled_image
+        # seg_cell[seg_i] = labelled_image_upsample if upscale else labelled_image
+        seg_cell[seg_i] = labelled_image
         eigs_cell[seg_i] = eigenvectors_l[seg_i]
 
     # Save the labelled image to the given file
@@ -391,7 +397,7 @@ def run_bsds_experiment(graph_type, image_id=None):
 
         # Get the number of clusters to look for in this image.
         k = get_bsd_num_cluster(os.path.join(ground_truth_directory, f"{id}.mat"))
-        print("looking for " + str(k) + " clusters")
+        # print("looking for " + str(k) + " clusters")
 
         # Create the list of numbers of eigenvectors to use for the clustering - get 10 data points for each image.
         # num_eigenvectors_l = list(range(2, k, int(math.ceil(k/10))))
@@ -400,10 +406,14 @@ def run_bsds_experiment(graph_type, image_id=None):
 
         num_eigenvectors_l = [k]
 
-        # Check what dataset to use
-        # dataset = pysc.datasets.BSDSDatasetSparsifier()
-        # dataset = pysc.datasets.BSDSDataset(id, blur_variance=0, graph_type=graph_type, hyperparam_0=hyperparam_0, data_directory=images_directory)
-        dataset = pysc.datasets.BSDSDataset(id, blur_variance=0, graph_type=graph_type, data_directory=images_directory)
+        # Check if dataset for sparse graph or not
+        if graph_type[:3] == "spa":
+            dataset = pysc.datasets.BSDSDatasetSparsifier(id, graph_type=graph_type, data_directory=images_directory)
+        else: 
+            # dataset = pysc.datasets.BSDSDataset(id, blur_variance=0, graph_type=graph_type, hyperparam_0=hyperparam_0, data_directory=images_directory)
+            dataset = pysc.datasets.BSDSDataset(id, blur_variance=0, graph_type=graph_type, data_directory=images_directory)
+
+
         segmentations = segment_bsds_image(dataset, k, num_eigenvectors_l)
 
         # Record segmentation time and graph size
@@ -413,7 +423,7 @@ def run_bsds_experiment(graph_type, image_id=None):
 
         # Save the downscaled image
         output_filename = f"results/bsds/downsamples/{dataset.img_idx}.jpg"
-        dataset.save_downsampled_image(output_filename)
+        # dataset.save_downsampled_image(output_filename)
 
         output_filename = f"results/bsds/segs/{dataset.img_idx}.mat"
         save_bsds_segmentations(dataset, segmentations, num_eigenvectors_l, output_filename)
@@ -422,8 +432,10 @@ def run_bsds_experiment(graph_type, image_id=None):
         #     output_filename = f"results/bsds/segs/{dataset.img_idx}.mat"
         #     save_bsds_segmentations(dataset, segmentations, num_eigenvectors_l, output_filename)
 
+
         output_filename = f"results/bsds/downsampled_segs/{dataset.img_idx}.mat"
         save_bsds_segmentations(dataset, segmentations, num_eigenvectors_l, output_filename, upscale=False)
+
         # Save the downscaled segmentation
         # for i, num_eigenvectors in enumerate(num_eigenvectors_l):
         #     output_filename = f"results/bsds/downsampled_segs/{dataset.img_idx}.mat"

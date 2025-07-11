@@ -99,6 +99,7 @@ def _load_mat_segs(mat_path: Path) -> Tuple[List[np.ndarray], List[int]]:
     # Matlab file loader flattens arrays with one dim
     # Fixing that - issues when there is only one segmentation
     # But setting squeeze_me to false breaks downstream stuff
+    print(segs_raw)
     if isinstance(segs_raw, np.ndarray) and segs_raw.ndim != 1: 
         segs_raw_new = np.empty(1, dtype=object)
         segs_raw_new[0] = segs_raw
@@ -115,7 +116,6 @@ def _load_mat_segs(mat_path: Path) -> Tuple[List[np.ndarray], List[int]]:
     segs = [_to_int_labels(np.asarray(s)) for s in segs_list]
     eigs = (list(eigs_raw) if isinstance(eigs_raw, (np.ndarray, list))
             else [int(eigs_raw)])
-    
 
     assert len(segs) == len(eigs)
     return segs, eigs

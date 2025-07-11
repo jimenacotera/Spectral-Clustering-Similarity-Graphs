@@ -193,11 +193,37 @@ def spectralSparsifier(data):
     """
     Following Algorithm 1 by Kent Quanrud as described in
     "Spectral Sparsification of Metrics and Kernels"
-    """
-    # print("Constructing spectral sparsifier...")
 
-    # Random vector where each coordinate independently 
+    Epsilon Sparsifier
+    data: (n,d) dimension sparse matrix
+    """
+    # Epsilon Sparsifier
+    eps = 1 
+    # print("Constructing spectral sparsifier...")
+    d = 5
+    #n= num of pixels
+    n = data.shape[0]
+
+    # Random vector where each coordinate is independently 
     # distributed as a standard Gaussian
+    # Using newer numpy random generator package 
+    vector = np.random.default_rng().standard_normal(d)
+    # Compute embedding of data on vector
+    y = data.dot(vector)
+    # Rank each embedding in vector a
+    ordered = np.lexsort((np.arange(n), y))
+    ranks = np.empty(n,dtype=int)
+    ranks[ordered] = np.arange(1, n+1)
+    print(ranks)
+
+
+    # Repeat (n logn eps^-2) times
+    for i in range (n * math.log(n) * eps):
+        # Sample edge (i,j) with prob proportional to inv rank difference
+        # to do so, sample an interval length with set prob
+        # then sample any interval with that length
+        pass
+
     
     adj_mat = scipy.sparse.lil_matrix((data.shape[0], data.shape[0]))
     return Graph(adj_mat)
