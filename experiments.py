@@ -257,10 +257,11 @@ def segment_bsds_image(bsds_dataset, num_segments, num_eigenvectors_l):
     """
     all_segmentations = []
 
+    print("Computing eigenvectors ...")
     # First, compute all of the eigenvectors up front 
     if bsds_dataset.graph_type.startswith("sparsifier-clus"):
         # Cluster preserving sparsifier
-        laplacian_matrix= bsds_dataset.graph.laplacian().to_scipy()
+        laplacian_matrix= bsds_dataset.graph.normalised_laplacian().to_scipy()
     else:
         laplacian_matrix = bsds_dataset.graph.normalised_laplacian_matrix()
     _, eigvecs = scipy.sparse.linalg.eigsh(laplacian_matrix, max(num_eigenvectors_l), which='SM')

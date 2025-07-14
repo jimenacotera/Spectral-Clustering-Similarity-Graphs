@@ -99,7 +99,7 @@ def _load_mat_segs(mat_path: Path) -> Tuple[List[np.ndarray], List[int]]:
     # Matlab file loader flattens arrays with one dim
     # Fixing that - issues when there is only one segmentation
     # But setting squeeze_me to false breaks downstream stuff
-    print(segs_raw)
+    # print(segs_raw)
     if isinstance(segs_raw, np.ndarray) and segs_raw.ndim != 1: 
         segs_raw_new = np.empty(1, dtype=object)
         segs_raw_new[0] = segs_raw
@@ -138,7 +138,7 @@ def _load_gt(gt_path: Path) -> List[np.ndarray]:
 
 def analyse_one_result(pred_mat: Path, gt_mat: Path
                        ) -> Tuple[List[float], List[float], List[int]]:
-    print(pred_mat)
+    # print(pred_mat)
     segs, eig_nums = _load_mat_segs(pred_mat)
     gts = _load_gt(gt_mat)
     ris, vois = [], []
@@ -164,7 +164,7 @@ def analyse_bsds_results(split: str = "test") -> None:
     # Get segmentation stats from the last generated stats file
     stats_df = pd.read_csv("results/bsds/csv_results/experimentStats.csv")
     # stats_df = stats_df.set_index('image')
-    print(stats_df)
+    # print(stats_df)
 
     out_csv.parent.mkdir(parents=True, exist_ok=True)
     with out_csv.open("w", newline="") as fh:

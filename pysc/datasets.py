@@ -117,7 +117,7 @@ class Dataset(object):
             elif graph_type[:3] == "spa": 
                 logger.info(f"Constructing sparsifier for {self}...")
                 if graph_type.startswith("sparsifier-spec"):
-                    self.graph = similaritygraphs.graph.spectralSparsifier(data=self.raw_data)
+                    self.graph = similaritygraphs.graph.spectralSparsifier(data=self.raw_data, graph_type=graph_type[15:])
                 # self.graph = similaritygraphs.graph.fullyConnected(data=self.raw_data, kernelName="inv-1-0.25")
                 # else: 
                 #     # assume other option is cluster preserving sparsifier

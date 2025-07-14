@@ -12,7 +12,7 @@ from sklearn.neighbors import NearestNeighbors
 import numpy as np
 import networkx as nx
 import pandas as pd
-
+import random
 
 
 class Graph: 
@@ -189,7 +189,7 @@ def inverse_euclidean(distance,hyperparameter):
 ### SPARSIFIERS
 
 
-def spectralSparsifier(data):
+def spectralSparsifier(data, graph_type):
     """
     Following Algorithm 1 by Kent Quanrud as described in
     "Spectral Sparsification of Metrics and Kernels"
@@ -197,8 +197,12 @@ def spectralSparsifier(data):
     Epsilon Sparsifier
     data: (n,d) dimension sparse matrix
     """
+
+    # TODO parse graph type for epsilon value
     # Epsilon Sparsifier
-    eps = 1 
+    eps = 10
+    # Variance for kernel
+    err = 0.001
     # print("Constructing spectral sparsifier...")
     d = 5
     #n= num of pixels
@@ -214,18 +218,60 @@ def spectralSparsifier(data):
     ordered = np.lexsort((np.arange(n), y))
     ranks = np.empty(n,dtype=int)
     ranks[ordered] = np.arange(1, n+1)
-    print(ranks)
+    # print(ranks)
 
 
-    # Repeat (n logn eps^-2) times
-    for i in range (n * math.log(n) * eps):
-        # Sample edge (i,j) with prob proportional to inv rank difference
-        # to do so, sample an interval length with set prob
-        # then sample any interval with that length
-        pass
+    # Probability distribution of length of difference of projections
 
-    
+     #TODO do i need to make this the actual prob funciton instead of normalising by the sum of the array
+    lengths = np.arange(1,n) #1 to n-1
+    raw_probs = (n-lengths) / lengths #np.array
+    prob_dist = raw_probs / raw_probs.sum()
+    # print(prob_dist)
+
+    sampler = np.random.default_rng()
+
+    # Build a dictionary to look up index of ranks 
+    rank_dict = {v: i for i, v in enumerate(ranks)}
+
+    # empty adjacency matrix
     adj_mat = scipy.sparse.lil_matrix((data.shape[0], data.shape[0]))
+    # Repeat (n logn eps^-2) times
+    print("[spectral sparsifier] starting sampling")
+    times = int(n * math.log(n) * (eps**(-2)))
+    print(times)
+    for i in range(times):
+        # print(i)
+        # 1. Sample edge (i,j) with prob proportional to inv rank difference
+        # to do so, sample an interval length with the probability distribution above
+        l = sampler.choice(a = lengths, p = prob_dist)
+        # print("sampled lenght: ", l)
+        # then sample any rank interval with that length with even probability
+        rank_i = random.randint(1, n-l-1)
+        rank_j = rank_i + l
+        # Get the corresponding datapoints
+        i = rank_dict[rank_i] 
+        j = rank_dict[rank_j]
+        # print("i: ", i , "; j: ", j)
+        # create an edge between them 
+        # If edge already exists, add weight to it
+        # print(data[i].shape)
+        # print(data[i])
+        weight = spectralKernel(data[i], data[j], err) / l
+        # print("weight = ", weight)
+        adj_mat[i,j] += weight
+        adj_mat[j,i] += weight
+
+    print("[spectral sparsifier] Done with spectral sparsifier...")
     return Graph(adj_mat)
 
+def spectralKernel(x_i, x_j, err):
+    '''
+    Inverse euclidean distance
 
+    x_i: (1,d) matrix??
+    '''
+    # using euclidean distance
+    dist = np.linalg.norm(x_i - x_j)
+    p = 1
+    return 1 / (err + np.abs(dist)**p)
