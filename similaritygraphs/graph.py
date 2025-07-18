@@ -200,7 +200,7 @@ def spectralSparsifier(data, graph_type):
 
     # TODO parse graph type for epsilon value
     # Epsilon Sparsifier
-    eps = 10
+    eps = 7
     # Variance for kernel
     err = 0.001
     # print("Constructing spectral sparsifier...")

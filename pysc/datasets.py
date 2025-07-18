@@ -21,7 +21,8 @@ import scipy.sparse
 import math
 from matplotlib import image
 from .sclogging import logger
-from stag import cluster, graph, graphio, utility
+from stag import cluster, graphio, utility
+from stag import graph as staggraph
 
 import similaritygraphs.graph
 
@@ -552,15 +553,59 @@ class BSDSDatasetSparsifier(Dataset):
 
     def load_graph(self, *args, **kwargs):
         if self.graph_type.startswith("sparsifier-clus"): 
-            # print("Creating dataset for cluster preserving sparsifier")
+            print("Creating dataset for cluster preserving sparsifier")
 
             # Parameter for similarity kernel for Cluster Preserving Sparsifier
             gamma = float(self.graph_type[16:])
-            # print("1 building dense mat")
+            print("1 building dense mat")
             data_dense = utility.DenseMat(self.raw_data)
-            # print("2 building approx sim graph")
-            self.graph = cluster.approximate_similarity_graph(data_dense, a = gamma)
-            # print("3 done with that")
+            print("2 building approx sim graph with gamma: ", gamma)
+            g = cluster.approximate_similarity_graph(data_dense, a = gamma)
+            print("3 done with that")
+
+            print(g.is_connected())
+
+            # Adding orthogonal edges
+            print("adding orthogonal edges:")
+            adj = g.adjacency().to_scipy()
+            data = adj.tocoo()
+
+            w = self.original_image_dimensions[0]
+            h = self.original_image_dimensions[1]
+            print(w, h)
+
+            # Kronecker products to create orthogonal edges
+            eW = numpy.ones(w-1)
+            eH = numpy.ones(h-1)
+            T_W = scipy.sparse.diags([ eW, eW ], [ 1, -1 ], shape=(w, w), format='csr')
+            T_H = scipy.sparse.diags([ eH, eH ], [ 1, -1 ], shape=(h, h), format='csr')
+
+            # build identity blocks explicitly as CSR
+            I_h = scipy.sparse.eye(h, format='csr')
+            I_w = scipy.sparse.eye(w, format='csr')
+
+            grid_graph_adj_mat = (scipy.sparse.kron(I_h, T_W, format='csr')
+                    + scipy.sparse.kron(T_H, I_w, format='csr')) * 0.1
+            
+            data = data.tocsr()
+            data += grid_graph_adj_mat
+            print("this should be CSR format: " , type(data))
+
+
+            self.graph = staggraph.Graph(data)
+
+            print("graph is connected? : ", self.graph.is_connected())
+
+            #debug
+            # self.graph = g
+
+
+
+
+
+            # print("added orthogonal edges")
+            
+
         else:  # Spectral Sparsifier
             super(BSDSDatasetSparsifier, self).load_graph(*args, **kwargs)
 

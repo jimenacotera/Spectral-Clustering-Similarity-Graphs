@@ -183,7 +183,7 @@ def analyse_bsds_results(split: str = "test") -> None:
             matching_rows = stats_df.loc[stats_df['image'] == int(img_id), ['duration', 'graphSize']]
             
             if not matching_rows.empty:
-                print("FOUND RUNTIME")
+                print("Found runtime duration for image")
                 row = matching_rows.iloc[0]
                 runtime_duration = row['duration']
                 graph_size = row['graphSize']

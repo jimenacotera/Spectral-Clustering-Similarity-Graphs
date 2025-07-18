@@ -261,7 +261,8 @@ def segment_bsds_image(bsds_dataset, num_segments, num_eigenvectors_l):
     # First, compute all of the eigenvectors up front 
     if bsds_dataset.graph_type.startswith("sparsifier-clus"):
         # Cluster preserving sparsifier
-        laplacian_matrix= bsds_dataset.graph.normalised_laplacian().to_scipy()
+        print("Getting the laplacian for cluster preserving")
+        laplacian_matrix = bsds_dataset.graph.normalised_laplacian().to_scipy()
     else:
         laplacian_matrix = bsds_dataset.graph.normalised_laplacian_matrix()
     _, eigvecs = scipy.sparse.linalg.eigsh(laplacian_matrix, max(num_eigenvectors_l), which='SM')
@@ -414,7 +415,7 @@ def run_bsds_experiment(graph_type, image_id=None):
             # dataset = pysc.datasets.BSDSDataset(id, blur_variance=0, graph_type=graph_type, hyperparam_0=hyperparam_0, data_directory=images_directory)
             dataset = pysc.datasets.BSDSDataset(id, blur_variance=0, graph_type=graph_type, data_directory=images_directory)
 
-
+        print("about to segment image")
         segmentations = segment_bsds_image(dataset, k, num_eigenvectors_l)
 
         # Record segmentation time and graph size
@@ -442,6 +443,8 @@ def run_bsds_experiment(graph_type, image_id=None):
         #     output_filename = f"results/bsds/downsampled_segs/{dataset.img_idx}.mat"
         #     save_bsds_segmentations(dataset, segmentations, num_eigenvectors_l, output_filename, upscale=False)
 
+        if i == 5: 
+            break
 
     # Save image runtimes to csv
     runtimes_df = pd.DataFrame(experiment_stats)
