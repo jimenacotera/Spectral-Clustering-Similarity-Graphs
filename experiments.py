@@ -307,16 +307,20 @@ def save_bsds_segmentations(bsds_dataset, segmentations, eigenvectors_l, filenam
         # Construct the labelled image with the downsampled dimensions
         labelled_image = numpy.array(pixel_labels, dtype="int32")
         # labelled_image = numpy.reshape(labelled_image, bsds_dataset.downsampled_image_dimensions) + 1
-        labelled_image = numpy.reshape(labelled_image, bsds_dataset.original_image_dimensions) + 1
+        if bsds_dataset.graph_type.startswith("sparsifier"):
+            labelled_image = numpy.reshape(labelled_image, bsds_dataset.original_image_dimensions) + 1
+            seg_cell[seg_i] = labelled_image
+        else:
+            labelled_image = numpy.reshape(labelled_image, bsds_dataset.downsampled_image_dimensions) + 1
 
-        # # Scale up the segmentation by taking the appropriate tensor product
-        # labelled_image_upsample =\
-        #     numpy.kron(labelled_image, numpy.ones((bsds_dataset.downsample_factor, bsds_dataset.downsample_factor)))
-        # labelled_image_upsample = labelled_image_upsample[:bsds_dataset.original_image_dimensions[0],
-        #                                                   :bsds_dataset.original_image_dimensions[1]]
+            # Scale up the segmentation by taking the appropriate tensor product
+            labelled_image_upsample =\
+                numpy.kron(labelled_image, numpy.ones((bsds_dataset.downsample_factor, bsds_dataset.downsample_factor)))
+            labelled_image_upsample = labelled_image_upsample[:bsds_dataset.original_image_dimensions[0],
+                                                            :bsds_dataset.original_image_dimensions[1]]
 
-        # seg_cell[seg_i] = labelled_image_upsample if upscale else labelled_image
-        seg_cell[seg_i] = labelled_image
+            seg_cell[seg_i] = labelled_image_upsample if upscale else labelled_image
+       
         eigs_cell[seg_i] = eigenvectors_l[seg_i]
 
     # Save the labelled image to the given file
@@ -421,7 +425,12 @@ def run_bsds_experiment(graph_type, image_id=None):
         # Record segmentation time and graph size
         duration = time.perf_counter() - start
         size = dataset.getGraphSize()
-        experiment_stats.append({'image': id, 'duration': duration, 'graphSize': size})
+        avg_degree = dataset.getAverageDegree()
+        print(avg_degree)
+        experiment_stats.append({'image': id
+                                 , 'duration': duration
+                                 , 'graphSize': size
+                                 , 'averageDegree': avg_degree})
 
         # Save the downscaled image
         output_filename = f"results/bsds/downsamples/{dataset.img_idx}.jpg"
@@ -443,8 +452,7 @@ def run_bsds_experiment(graph_type, image_id=None):
         #     output_filename = f"results/bsds/downsampled_segs/{dataset.img_idx}.mat"
         #     save_bsds_segmentations(dataset, segmentations, num_eigenvectors_l, output_filename, upscale=False)
 
-        if i == 5: 
-            break
+        break
 
     # Save image runtimes to csv
     runtimes_df = pd.DataFrame(experiment_stats)

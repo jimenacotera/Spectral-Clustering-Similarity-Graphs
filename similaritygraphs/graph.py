@@ -98,9 +98,18 @@ class Graph:
 
 
     def degree_matrix(self):
-        """Construct the diagonal degree matrix of the graph."""
+        """
+        Construct the diagonal degree matrix of the graph.
+        """
         return scipy.sparse.spdiags(
             self.degrees, [0], self.number_of_vertices(), self.number_of_vertices(), format="csr")
+    
+    def average_degree(self):
+        """
+        Get the average degree of the matrix
+        """
+        return sum(self.degrees) / len(self.degrees)
+
 
 
 
@@ -198,14 +207,19 @@ def spectralSparsifier(data, graph_type):
     data: (n,d) dimension sparse matrix
     """
 
-    # TODO parse graph type for epsilon value
-    # Epsilon Sparsifier
-    eps = 7
-    # Variance for kernel
-    err = 0.001
-    # print("Constructing spectral sparsifier...")
+    # Parse graph type : error-epsilon
+    err , eps = graph_type.split('-')
+    err = float(err)
+    eps = int(eps)
+
+    # # Epsilon Sparsifier
+    # eps = 7
+    # # Variance for kernel
+    # err = 0.001
+
+    # d is the dimensions of each pixel
     d = 5
-    #n= num of pixels
+    #n = num of pixels
     n = data.shape[0]
 
     # Random vector where each coordinate is independently 
@@ -257,7 +271,7 @@ def spectralSparsifier(data, graph_type):
         # If edge already exists, add weight to it
         # print(data[i].shape)
         # print(data[i])
-        weight = spectralKernel(data[i], data[j], err) / l
+        weight = spectralKernel(data[i], data[j], err) * l
         # print("weight = ", weight)
         adj_mat[i,j] += weight
         adj_mat[j,i] += weight

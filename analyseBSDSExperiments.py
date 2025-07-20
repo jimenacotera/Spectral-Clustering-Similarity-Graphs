@@ -169,7 +169,7 @@ def analyse_bsds_results(split: str = "test") -> None:
     out_csv.parent.mkdir(parents=True, exist_ok=True)
     with out_csv.open("w", newline="") as fh:
         writer = csv.writer(fh)
-        writer.writerow(["id", "k", "eigs", "ri", "voi", "duration", "graphSize"])
+        writer.writerow(["id", "k", "eigs", "ri", "voi", "duration", "graphSize", "averageDegree"])
         for pred_path in sorted(seg_dir_expanded.glob("*.mat")):
             img_id = pred_path.stem
             gt_path = gt_dir_expanded / f"{img_id}.mat"
@@ -180,24 +180,23 @@ def analyse_bsds_results(split: str = "test") -> None:
 
             # Get analysis stats 
             ris, vois, eigs = analyse_one_result(pred_path, gt_path)
-            matching_rows = stats_df.loc[stats_df['image'] == int(img_id), ['duration', 'graphSize']]
+            matching_rows = stats_df.loc[stats_df['image'] == int(img_id), ['duration', 'graphSize', 'averageDegree']]
             
             if not matching_rows.empty:
                 print("Found runtime duration for image")
                 row = matching_rows.iloc[0]
                 runtime_duration = row['duration']
                 graph_size = row['graphSize']
+                avg_deg = row['averageDegree']
             else:
                 runtime_duration = 0
                 graph_size = 0
+                avg_deg = 0
 
             # if img_id in stats_df.index:
             #     runtime_duration = stats_df.at[img_id, 'duration']
             # else: 
             #     runtime_duration = 0
-
-
-
 
             # Saving k as the highest num of eigenvectors
             for ri, voi, eig in zip(ris, vois, eigs):
@@ -208,7 +207,8 @@ def analyse_bsds_results(split: str = "test") -> None:
                     f"{ri:.6f}",                     
                     f"{voi:.6f}", 
                     runtime_duration,
-                    graph_size              
+                    graph_size,
+                    avg_deg              
                 ])
     print(f" [Evaluation saved] to {out_csv}")
 

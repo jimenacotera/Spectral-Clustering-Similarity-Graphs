@@ -118,7 +118,7 @@ class Dataset(object):
             elif graph_type[:3] == "spa": 
                 logger.info(f"Constructing sparsifier for {self}...")
                 if graph_type.startswith("sparsifier-spec"):
-                    self.graph = similaritygraphs.graph.spectralSparsifier(data=self.raw_data, graph_type=graph_type[15:])
+                    self.graph = similaritygraphs.graph.spectralSparsifier(data=self.raw_data, graph_type=graph_type[16:])
                 # self.graph = similaritygraphs.graph.fullyConnected(data=self.raw_data, kernelName="inv-1-0.25")
                 # else: 
                 #     # assume other option is cluster preserving sparsifier
@@ -409,17 +409,28 @@ class BSDSDataset(Dataset):
         self.downsampled_image_dimensions = []
         self.downsample_factor = downsample_factor
         self.blur_variance = blur_variance
-        # self.graph_type = graph_type
+        self.graph_type = graph_type
 
         # super(BSDSDataset, self).__init__(*args, graph_type="rbf", **kwargs)
         super(BSDSDataset, self).__init__(*args, graph_type=graph_type, **kwargs)
     
+
     def getGraphSize(self):
         if self.graph is None:
             return 0
         else: 
             return self.graph.total_volume() // 2
 
+
+    def getAverageDegree(self):
+        '''
+        Get average degree of similarity graph
+        None -> Float
+        '''
+        if self.graph is None:
+            return 0
+        else: 
+            return self.graph.average_degree()
 
 
     def load_graph(self, *args, **kwargs):
@@ -546,8 +557,22 @@ class BSDSDatasetSparsifier(Dataset):
     def getGraphSize(self):
         if self.graph is None:
             return 0
-        else: 
+        else:
             return self.graph.total_volume() // 2
+        
+
+    def getAverageDegree(self):
+        '''
+        Get average degree of similarity graph
+        None -> Float
+        '''
+        if self.graph is None:
+            return 0
+        elif self.graph_type.startswith("sparsifier-clus"): 
+            deg = self.graph.degree_matrix() #stag.utility.SprsMat
+            return deg.to_scipy().tocsr().diagonal().mean()
+        else: #spectral sparsifier
+            return self.graph.average_degree()
 
 
 
@@ -572,12 +597,12 @@ class BSDSDatasetSparsifier(Dataset):
 
             w = self.original_image_dimensions[0]
             h = self.original_image_dimensions[1]
-            print(w, h)
+            print("original image dimensions: ", w, h)
 
             # Kronecker products to create orthogonal edges
             eW = numpy.ones(w-1)
             eH = numpy.ones(h-1)
-            T_W = scipy.sparse.diags([ eW, eW ], [ 1, -1 ], shape=(w, w), format='csr')
+            T_W = scipy.sparse.diags([ eW, eW ], [ 1, -1 ], shape=(w, w), format='csr') 
             T_H = scipy.sparse.diags([ eH, eH ], [ 1, -1 ], shape=(h, h), format='csr')
 
             # build identity blocks explicitly as CSR
