@@ -18,7 +18,7 @@ for experiment in experiments:
 
     # data = 'bsds'
 
-    print("Running experiment " + experiment_name + "----------------------------------")
+    print("Running experiment " + experiment_name + "with data: " + data + "----------------------------------")
 
     subprocess.run(["python3", "experiments.py", data, sim_graph])
 
