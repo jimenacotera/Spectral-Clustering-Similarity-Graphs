@@ -99,6 +99,7 @@ class Dataset(object):
         :param graph_file: (optional) the file containing the edgelist of the graph to load.
         :param graph_type: (optional) if there is no edgelist, the type of graph to be constructed.
         """
+        print("graph type in dataset.load_graph: ", graph_type)
         if graph_file is not None:
             logger.info(f"Loading edgelist graph for the {self.__class__.__name__} from {graph_file}...")
             self.graph = sgtl.graph.from_edgelist(graph_file, num_vertices=self.num_data_points)

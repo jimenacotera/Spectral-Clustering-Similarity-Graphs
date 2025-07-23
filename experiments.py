@@ -26,7 +26,8 @@ import pandas as pd
 
 
 def basic_experiment_sub_process(dataset, k, num_eigenvalues: int, q):
-    logger.info(f"Starting clustering: {dataset} with {num_eigenvalues} eigenvalues.")
+    # logger.info(f"Starting clustering: {dataset} with {num_eigenvalues} eigenvalues.")
+    print(f"Starting clustering: {dataset} with {num_eigenvalues} eigenvalues and k = {k}.")
     start_time = time.time()
     found_clusters = sgtl.clustering.spectral_clustering(dataset.graph, num_clusters=k,
                                                          num_eigenvectors=num_eigenvalues)
@@ -56,10 +57,15 @@ def basic_experiment(dataset, k):
     times = {}
     q = Queue()
     processes = []
-    for i in range(2, k + 1):
-        p = Process(target=basic_experiment_sub_process, args=(dataset, k, i, q))
-        p.start()
-        processes.append(p)
+    # for i in range(2, k + 1):
+    #     p = Process(target=basic_experiment_sub_process, args=(dataset, k, i, q))
+    #     p.start()
+    #     processes.append(p)
+
+    # Using k for number of eigenvalues
+    p = Process(target=basic_experiment_sub_process, args=(dataset, k, k, q))
+    p.start()
+    processes.append(p)
 
     logger.info(f"All sub-processes started for {dataset}.")
 
@@ -83,17 +89,20 @@ def basic_experiment(dataset, k):
 # Experiments on MNIST and USPS
 ############################################
 def mnist_experiment_instance(d, nn, q):
+    print("nn: ", nn)
     this_rand_scores, this_mut_info, this_conductances, this_times = basic_experiment(
         pysc.datasets.MnistDataset(k=nn, downsample=d), 10)
     q.put((d, nn, this_rand_scores, this_mut_info, this_conductances, this_times))
 
-def run_mnist_experiment():
+def run_mnist_experiment(graph_type):
     """
     Run experiments on the MNIST dataset.
     """
 
-    # We will construct the 3-NN graph for the MNIST dataset.
-    k = 3
+    # Parse graph type argument
+    # if graph_type[:3] == "knn":
+    k = int(graph_type[3:])
+    print(graph_type)
 
     # Kick off the experiment in a sub-process.
     q = Queue()
@@ -107,8 +116,11 @@ def run_mnist_experiment():
 
         while not q.empty():
             downsample, k, rand_scores, _, _, _ = q.get()
-            for i in range(2, 11):
-                fout.write(f"{k}, {downsample}, {i}, {rand_scores[i]}\n")
+            print("rand scores ", rand_scores)
+            print(k)
+            fout.write(f"{k}, {downsample}, {k}, {rand_scores[k]}\n")
+            # for i in range(2, 11):
+            #     fout.write(f"{k}, {downsample}, {i}, {rand_scores[i]}\n")
 
 def usps_experiment_instance(d, nn, q):
     this_rand_scores, this_mut_info, this_conductances, this_times = basic_experiment(
@@ -481,7 +493,7 @@ def main():
     elif args.experiment == 'grid':
         run_sbm_experiment(1000, 4, 0.01, use_grid=True)
     elif args.experiment == 'mnist':
-        run_mnist_experiment()
+        run_mnist_experiment(graph_type = args.graph_type)
     # elif args.experiment == 'usps':
     #     run_usps_experiment()
     elif args.experiment == 'bsds':
