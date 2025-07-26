@@ -23,30 +23,33 @@ import pysc.objfunc
 from pysc.sclogging import logger
 import pandas as pd
 
+import similaritygraphs.graph
 
 
-def basic_experiment_sub_process(dataset, k, num_eigenvalues: int, q):
+
+def basic_experiment_sub_process(dataset, num_clusters, num_eigenvalues: int, q):
     # logger.info(f"Starting clustering: {dataset} with {num_eigenvalues} eigenvalues.")
-    print(f"Starting clustering: {dataset} with {num_eigenvalues} eigenvalues and k = {k}.")
+    print(f"Starting clustering: {dataset} with {num_eigenvalues} eigenvalues and num_clusters = {num_clusters}.")
     start_time = time.time()
-    found_clusters = sgtl.clustering.spectral_clustering(dataset.graph, num_clusters=k,
+    found_clusters = sgtl.clustering.spectral_clustering(dataset.graph, num_clusters=num_clusters,
                                                          num_eigenvectors=num_eigenvalues)
     end_time = time.time()
     total_time = end_time - start_time
     logger.info(f"Finished clustering: {dataset} with {num_eigenvalues} eigenvalues.")
     this_rand_score = pysc.evaluation.adjusted_rand_index(dataset.gt_labels, found_clusters)
     this_mutual_info = pysc.evaluation.mutual_information(dataset.gt_labels, found_clusters)
-    this_conductance = pysc.objfunc.KWayExpansion.apply(dataset.graph, found_clusters)
-    q.put((num_eigenvalues, this_rand_score, this_mutual_info, this_conductance, total_time))
+    # this_conductance = pysc.objfunc.KWayExpansion.apply(dataset.graph, found_clusters)
+    # q.put((num_eigenvalues, this_rand_score, this_mutual_info, this_conductance, total_time))
+    q.put((num_eigenvalues, this_rand_score, this_mutual_info, None, total_time))
 
 
-def basic_experiment(dataset, k):
+def basic_experiment(dataset, num_clusters):
     """
     Run a basic experiment with a given dataset, in which we do spectral clustering with a variety of numbers of
     eigenvectors, and compare the resulting clustering.
 
     :param dataset: A `pysc.datasets.Dataset` object.
-    :param k: The number of clusters.
+    :param num_clusters: The number of clusters.
     """
     logger.info(f"Running basic experiment with {dataset.__class__.__name__}.")
 
@@ -57,13 +60,10 @@ def basic_experiment(dataset, k):
     times = {}
     q = Queue()
     processes = []
-    # for i in range(2, k + 1):
-    #     p = Process(target=basic_experiment_sub_process, args=(dataset, k, i, q))
-    #     p.start()
-    #     processes.append(p)
 
-    # Using k for number of eigenvalues
-    p = Process(target=basic_experiment_sub_process, args=(dataset, k, k, q))
+    num_eigenvalues = num_clusters
+
+    p = Process(target=basic_experiment_sub_process, args=(dataset, num_clusters, num_eigenvalues, q))
     p.start()
     processes.append(p)
 
@@ -74,53 +74,81 @@ def basic_experiment(dataset, k):
 
     logger.info(f"All sub-processes finished for {dataset}.")
 
+    rand_score = 0
     # Get all of the data from the subprocesses
     while not q.empty():
+        print("[DEBUG] in basic_experiment loop - segmentation ran one time at least")
         num_vectors, this_rand_sc, this_mut_info, this_conductance, this_time = q.get()
-        rand_scores[num_vectors] = this_rand_sc
+        rand_score = this_rand_sc
         mutual_info[num_vectors] = this_mut_info
-        conductances[num_vectors] = this_conductance
+        # conductances[num_vectors] = this_conductance
         times[num_vectors] = this_time
 
-    return rand_scores, mutual_info, conductances, times
+    # return rand_scores, mutual_info, conductances, times
+    return rand_score, mutual_info, None, times
+    # return this_rand_sc, mutual_info, conductances, times
 
 
 ############################################
 # Experiments on MNIST and USPS
 ############################################
-def mnist_experiment_instance(d, nn, q):
-    print("nn: ", nn)
-    this_rand_scores, this_mut_info, this_conductances, this_times = basic_experiment(
-        pysc.datasets.MnistDataset(k=nn, downsample=d), 10)
-    q.put((d, nn, this_rand_scores, this_mut_info, this_conductances, this_times))
-
 def run_mnist_experiment(graph_type):
     """
     Run experiments on the MNIST dataset.
     """
+    num_clusters_mnist = 10
 
-    # Parse graph type argument
+    # Parse graph type argument to creat ap
+    # k = None
     # if graph_type[:3] == "knn":
-    k = int(graph_type[3:])
-    print(graph_type)
+    #     k = int(graph_type[3:])
+    # elif 
+    # print(graph_type)
 
-    # Kick off the experiment in a sub-process.
-    q = Queue()
-    p = Process(target=mnist_experiment_instance, args=(None, k, q))
-    p.start()
-    p.join()
+    # experiment_stats = []
+    # Run experiment
+    downsample = None
+    dataset =  pysc.datasets.MnistDataset(downsample=downsample, graph_type=graph_type)
+    print("[DEBUG] the graph type in experiments.py is: " , type(dataset.graph))
+    this_rand_scores, this_mut_info, this_conductances, this_times = basic_experiment(dataset=dataset, num_clusters=num_clusters_mnist)
+    # q.put((d, nn, this_rand_scores, this_mut_info, this_conductances, this_times))
 
-    # Write out the results
-    with open("results/mnist/results.csv", 'w') as fout:
-        fout.write("k, d, eigenvectors, rand\n")
+    graph_size = dataset.getGraphSize()
+    if graph_type[:3] == "knn": 
+        avg_deg = int(graph_type[3:])
+    else : 
+        avg_deg = dataset.getAverageDegree()
+    # Write results to csv file
+    experiment_stats = {'dataset': 'MNIST'
+                                 , 'ARI': this_rand_scores
+                                 , 'numClusters': num_clusters_mnist
+                                 , 'downsampling': 0 if downsample is None else downsample
+                                 , 'graphSize': graph_size
+                                 , 'averageDegree': avg_deg
+                                 , 'graphType': graph_type }
+    
+    output_filename = output_filename = "results/mnist/results.csv"
 
-        while not q.empty():
-            downsample, k, rand_scores, _, _, _ = q.get()
-            print("rand scores ", rand_scores)
-            print(k)
-            fout.write(f"{k}, {downsample}, {k}, {rand_scores[k]}\n")
-            # for i in range(2, 11):
-            #     fout.write(f"{k}, {downsample}, {i}, {rand_scores[i]}\n")
+    print("[DEBUG]", this_rand_scores )
+
+    # Read existing CSV 
+    if os.path.exists(output_filename):
+        df = pd.read_csv(output_filename)
+    else:
+        df = pd.DataFrame(columns=experiment_stats.keys())
+    # chack if graphType in existing csv
+    mask = df['graphType'] == experiment_stats['graphType']
+    if mask.any():
+        for col, val in experiment_stats.items():
+            df.loc[mask, col] = val
+    else:
+        df = pd.concat([df, pd.DataFrame([experiment_stats])], ignore_index=True)
+
+
+    # stats_df = pd.DataFrame(experiment_stats)
+    df.to_csv(output_filename, index=False)
+
+
 
 def usps_experiment_instance(d, nn, q):
     this_rand_scores, this_mut_info, this_conductances, this_times = basic_experiment(
@@ -402,6 +430,9 @@ def run_bsds_experiment(graph_type, image_id=None):
     for i, file in enumerate(image_files):
         
         id = file.split(".")[0]
+        print(f"Running BSDS experiment with image {file}. (Image {i+1}/{len(image_files)})")
+        k = get_bsd_num_cluster(os.path.join(ground_truth_directory, f"{id}.mat"))
+        
         start = time.perf_counter()
 
         # # Ignore any images we've already tried.
@@ -411,10 +442,9 @@ def run_bsds_experiment(graph_type, image_id=None):
         #     continue
 
         # logger.info(f"Running BSDS experiment with image {file}. (Image {i+1}/{len(image_files)})")
-        print(f"Running BSDS experiment with image {file}. (Image {i+1}/{len(image_files)})")
 
         # Get the number of clusters to look for in this image.
-        k = get_bsd_num_cluster(os.path.join(ground_truth_directory, f"{id}.mat"))
+        
         # print("looking for " + str(k) + " clusters")
 
         # Create the list of numbers of eigenvectors to use for the clustering - get 10 data points for each image.
@@ -442,7 +472,8 @@ def run_bsds_experiment(graph_type, image_id=None):
         experiment_stats.append({'image': id
                                  , 'duration': duration
                                  , 'graphSize': size
-                                 , 'averageDegree': avg_degree})
+                                 , 'averageDegree': avg_degree
+                                 , 'graphType': dataset.graph_type})
 
         # Save the downscaled image
         output_filename = f"results/bsds/downsamples/{dataset.img_idx}.jpg"
@@ -507,7 +538,8 @@ def main():
         else:
             # run_bsds_experiment(image_id=args.bsds_image, graph_type=args.graph_type, hyperparam_0=args.hyperparam_0)
             run_bsds_experiment(image_id=args.bsds_image, graph_type=args.graph_type)
-
+    else: 
+        raise ValueError("Invalid dataset")
 
 if __name__ == "__main__":
     main()

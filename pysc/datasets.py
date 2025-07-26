@@ -68,6 +68,22 @@ class Dataset(object):
             kwargs['graph_file'] = graph_file
         return kwargs
 
+    def getGraphSize(self):
+        if self.graph is None:
+            return 0
+        else: 
+            return self.graph.total_volume() // 2
+        
+    def getAverageDegree(self):
+        '''
+        Get average degree of similarity graph
+        None -> Float
+        '''
+        if self.graph is None:
+            return 0
+        else: 
+            return self.graph.average_degree()
+        
     def load_data(self, data_file):
         """
         Load the raw data from the given data file.
@@ -99,23 +115,25 @@ class Dataset(object):
         :param graph_file: (optional) the file containing the edgelist of the graph to load.
         :param graph_type: (optional) if there is no edgelist, the type of graph to be constructed.
         """
-        print("graph type in dataset.load_graph: ", graph_type)
+        print("[DEBUG] in super load_graph")
         if graph_file is not None:
-            logger.info(f"Loading edgelist graph for the {self.__class__.__name__} from {graph_file}...")
+            print(f"Loading edgelist graph for the {self.__class__.__name__} from {graph_file}...")
             self.graph = sgtl.graph.from_edgelist(graph_file, num_vertices=self.num_data_points)
         elif self.raw_data is not None:
             # Construct the graph using the method specified
             if graph_type[:3] == "knn":
-                logger.info(f"Constructing the KNN graph for the {self.__class__.__name__}...")
+                print(f"Constructing the KNN graph for the {self.__class__.__name__}...")
 
                 # We will construct the k-nearest neighbour graph
                 k = int(graph_type[3:])
                 self.graph = sgtl.graph.knn_graph(self.raw_data, k)
             elif graph_type[:3] == "fcn": 
-                logger.info(f"Constructing the fully connected graph for {self}...")
+                print(f"Constructing the fully connected graph for {self}...")
                 # self.graph = similaritygraphs.graph.fullyConnected(data=self.raw_data, kernelName="rbf", variance=20)
                 # self.graph = similaritygraphs.graph.fullyConnected(data=self.raw_data, kernelName=graph_type[4:], variance=30)
                 self.graph = similaritygraphs.graph.fullyConnected(data=self.raw_data, kernelName=graph_type[4:])
+                print("[DEBUG] fresh graph type: ", type(self.graph))
+                print("[DEBUG] done constructing graph")
             elif graph_type[:3] == "spa": 
                 logger.info(f"Constructing sparsifier for {self}...")
                 if graph_type.startswith("sparsifier-spec"):
@@ -144,6 +162,7 @@ class Dataset(object):
         :param graph_filename: the name of the file to save the graph to
         :param graph_type: which type of graph to construct from the data
         """
+        print("[DEBUG] in Dataset.construct and save graph")
         # Construct the graph
         self.load_graph(graph_file=None, graph_type=graph_type)
 
@@ -164,28 +183,31 @@ class Dataset(object):
 
 class MnistDataset(Dataset):
 
-    def __init__(self, *args, k=10, downsample=None, **kwargs):
+    def __init__(self, *args, downsample=None, graph_type, **kwargs):
         """
-        Load the mnist dataset using the KNN graph.
+        Load the mnist dataset using the specified graph.
 
         :param k: (Optional) the value of k in the KNN graph to use
         :param downsample: Set to an integer to downsample each image to an n * n image after normalisation.
         """
         self.downsample = downsample
-        self.k = k
+        # self.k = k
         self.graph = None
+        self.graph_type = graph_type
 
-        # Generate the edgelist file if it doesn't already exist.
-        if self.downsample is not None:
-            edgelist_filename = f"data/mnist/mnist_{downsample}_knn{k}.edgelist"
-        else:
-            edgelist_filename = f"data/mnist/mnist_knn{k}.edgelist"
-        if not os.path.exists(edgelist_filename):
-            self.load_data(None)
-            self.construct_and_save_graph(edgelist_filename, graph_type=f"knn{k}")
+        # # Generate the edgelist file if it doesn't already exist.
+        # if self.downsample is not None:
+        #     edgelist_filename = f"data/mnist/mnist_{downsample}_{graph_type}.edgelist"
+        # else:
+        #     edgelist_filename = f"data/mnist/mnist_{graph_type}.edgelist"
+        # if not os.path.exists(edgelist_filename):
+        #     self.load_data(None)
+        #     # self.construct_and_save_graph(edgelist_filename, graph_type=f"knn{k}")
+        #     self.construct_and_save_graph(edgelist_filename, graph_type=graph_type)
 
-        kwargs = self.set_default_files(None, None, edgelist_filename, kwargs)
-        super(MnistDataset, self).__init__(*args, **kwargs)
+        edgelist_filename = f"data/mnist/mnist_{graph_type}.edgelist"
+        # kwargs = self.set_default_files(None, None, edgelist_filename, kwargs)
+        super(MnistDataset, self).__init__(graph_type=graph_type, *args, **kwargs)
 
     def load_data(self, data_file):
         """
@@ -235,7 +257,7 @@ class MnistDataset(Dataset):
         # TODO: add the test set as well
 
     def __str__(self):
-        return f"mnist({self.k}, {self.downsample})"
+        return f"mnist({self.graph_type}, {self.downsample})"
 
     def __repr__(self):
         self.__str__()
@@ -416,22 +438,22 @@ class BSDSDataset(Dataset):
         super(BSDSDataset, self).__init__(*args, graph_type=graph_type, **kwargs)
     
 
-    def getGraphSize(self):
-        if self.graph is None:
-            return 0
-        else: 
-            return self.graph.total_volume() // 2
+    # def getGraphSize(self):
+    #     if self.graph is None:
+    #         return 0
+    #     else: 
+    #         return self.graph.total_volume() // 2
 
 
-    def getAverageDegree(self):
-        '''
-        Get average degree of similarity graph
-        None -> Float
-        '''
-        if self.graph is None:
-            return 0
-        else: 
-            return self.graph.average_degree()
+    # def getAverageDegree(self):
+    #     '''
+    #     Get average degree of similarity graph
+    #     None -> Float
+    #     '''
+    #     if self.graph is None:
+    #         return 0
+    #     else: 
+    #         return self.graph.average_degree()
 
 
     def load_graph(self, *args, **kwargs):
@@ -525,9 +547,6 @@ class BSDSDataset(Dataset):
         return f"bsds({self.img_idx})"
     
 
-
-
-
 class BSDSDatasetSparsifier(Dataset):
 
     def __init__(self
@@ -555,11 +574,11 @@ class BSDSDatasetSparsifier(Dataset):
         super(BSDSDatasetSparsifier, self).__init__(*args, graph_type=graph_type, **kwargs)
     
 
-    def getGraphSize(self):
-        if self.graph is None:
-            return 0
-        else:
-            return self.graph.total_volume() // 2
+    # def getGraphSize(self):
+    #     if self.graph is None:
+    #         return 0
+    #     else:
+    #         return self.graph.total_volume() // 2
         
 
     def getAverageDegree(self):
@@ -567,6 +586,7 @@ class BSDSDatasetSparsifier(Dataset):
         Get average degree of similarity graph
         None -> Float
         '''
+        print("[DEBUG] usign custom avg deg funciton")
         if self.graph is None:
             return 0
         elif self.graph_type.startswith("sparsifier-clus"): 

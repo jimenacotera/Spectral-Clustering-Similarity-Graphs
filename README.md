@@ -1,6 +1,6 @@
 The code in this repository is based on https://github.com/pmacg/spectral-clustering-meta-graphs, the code to reproduce the results in the paper "[A Tighter Analysis of Spectral Clustering, and Beyond](https://arxiv.org/abs/2208.01724)", published in ICML 2022.
 
-
+*****add that my code jsut runs for one eigenvector differing from their code
 
 
 ## Preparing your environment
